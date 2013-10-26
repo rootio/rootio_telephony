@@ -111,7 +111,7 @@ def get_caller(func):
             m.text = parameters.get('body')
             m.from_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number = parameters.get('from_number'), number = parameters.get('from_number')).id
             m.to_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number = parameters.get('fr'), number = parameters.get('fr')).id         
-            print "about to commit" + str(m.__dict__
+            print "about to commit" + str(m.__dict__)
             db.session.add(m)
             db.session.commit()      
         else:
