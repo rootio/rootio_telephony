@@ -38,3 +38,5 @@ nosetests.xml
 # Csik
 config.py
 venv
+fabfile.py
+
