@@ -9,6 +9,7 @@ import sys, os
 import datetime
 import requests
 
+
 import plivohelper
          
                  
@@ -68,6 +69,8 @@ def hangup():
     # Post params- 'request_uuid': request id given at the time of api call,
     #               'CallUUID': unique id of call, 'reason': reason of hangup
     print "We got a hangup notification"
+    c = Call()
+
     return "OK"                                  
     
 @telephony_server.route('/heartbeat/', methods=['GET', 'POST'])
