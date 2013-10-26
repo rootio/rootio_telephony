@@ -111,12 +111,12 @@ def get_caller(func):
             m.text = parameters.get('body')
             m.from_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number = parameters.get('from_number'), number = parameters.get('from_number')).id
             m.to_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number = parameters.get('fr'), number = parameters.get('fr')).id         
-            print "about to commit" + str(m.__dict__)
+            print "about to commit" + str(m.__dict__
             db.session.add(m)
             db.session.commit()      
         else:
             if parameters.get('CallStatus') == 'ringing':
-                c = get_or_create(db.session, Call, call_uuid = parameters.get('CallUUID')).id
+                c = get_or_create(db.session, Call, call_uuid = parameters.get('CallUUID'))
                 c.call_uuid = parameters.get('CallUUID')
                 c.start_time = datetime.datetime.now()                                                                     
                 c.from_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number = parameters.get('From'), number = parameters.get('From')).id
@@ -125,7 +125,7 @@ def get_caller(func):
                 db.session.add(c)
                 db.session.commit()
             if parameters.get('CallStatus') == 'completed':
-                c = get_or_create(db.session, Call, call_uuid = parameters.get('CallUUID')).id
+                c = get_or_create(db.session, Call, call_uuid = parameters.get('CallUUID'))
                 c.end_time = datetime.datetime.now()                                                                     
                 print "about to commit" + str(c.__dict__)
                 db.session.add(c)
