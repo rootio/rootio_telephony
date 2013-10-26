@@ -115,14 +115,21 @@ def get_caller(func):
             db.session.add(m)
             db.session.commit()      
         else:
-            c = Call()
-            c.message_uuid = parameters.get('CallUUID')
-            c.start_time = datetime.datetime.now()                                                                     
-            c.from_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number = parameters.get('From'), number = parameters.get('From')).id
-            c.to_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number = parameters.get('To'), number = parameters.get('To')).id      
-            print "about to commit" + str(c.__dict__)
-            db.session.add(c)
-            db.session.commit()
+            if parameters.get('CallStatus') == 'ringing'
+                c = get_or_create(db.session, Call, message_uuid = parameters.get('CallUUID')).id
+                c.call_uuid = parameters.get('CallUUID')
+                c.start_time = datetime.datetime.now()                                                                     
+                c.from_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number = parameters.get('From'), number = parameters.get('From')).id
+                c.to_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number = parameters.get('To'), number = parameters.get('To')).id      
+                print "about to commit" + str(c.__dict__)
+                db.session.add(c)
+                db.session.commit()
+            if parameters.get('CallStatus') == 'completed'
+                c = get_or_create(db.session, Call, message_uuid = parameters.get('CallUUID')).id
+                c.end_time = datetime.datetime.now()                                                                     
+                print "about to commit" + str(c.__dict__)
+                db.session.add(c)
+                db.session.commit()
                                                                  
         return func(*args, **kwargs)
     return inner
