@@ -5,22 +5,28 @@ from __future__ import with_statement
 from fabric.api import *
 from contextlib import contextmanager as _contextmanager
 
+
 @_contextmanager
 def virtualenv():
     with prefix(env.virtualenv_activate):
         yield
 
 env.hosts = ['176.58.125.166']
-env.user = 'rootio'
-env.project_root = '/home/rootio/public_python/rootio_web'
+env.user = 'csik'
+env.project_root = '/home/csik/public_python/rootio_telephony'
 env.virtualenv_activate = 'source venv/bin/activate'
-env.forward_agent = True
+env.forward_agent = Truebranch = 'master'
 
-def git_update():
-    stash_str = run("git stash")
-    run("git pull origin master")
-    if stash_str.strip() != 'No local changes to save':
-        run("git stash pop")
+def git_up(branch = "master"):
+    local("git add -p && git commit")
+    local("git push origin {0}".format(branch))
+
+def git_update(branch = 'master'):
+    with cd(env.project_root):
+        stash_str = run("git stash")
+        run("git pull origin {0}".format(branch))
+        if stash_str.strip() != 'No local changes to save':
+            run("git stash pop")
 
 
 def restart_apache():
