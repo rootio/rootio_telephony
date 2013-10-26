@@ -1,9 +1,14 @@
 
-from flask.ext.script import Manager
+from flask.ext.script import Manager, Shell
 
 from telephony_server import telephony_server,db
 
-manager = Manager(telephony_server)     
+def _make_context():
+    return dict(db=db, t_models=rootio.telephony.models, r_models=rootio.radio.models)
+    
+manager = Manager(telephony_server)  
+manager.add_command("sh", Shell(make_context=_make_context))
+
 
 from rootio.extensions import db
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -24,6 +29,7 @@ def reloaddb():
     db.drop_all()
     from rootio.telephony.models import PhoneNumber, Message
     db.create_all()
+
 
 
 if __name__ == "__main__":
