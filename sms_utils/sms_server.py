@@ -12,7 +12,7 @@ import urllib2
 
 GOIP_server = '127.0.0.1' #'172.248.114.178'
 telephony_server = '127.0.0.1:5000/sms/in'
-
+sys.path.append('/home/csik/public_python/sms_server/deploy') #move
 
 app = Flask(__name__)    
 from rootio.extensions import db
