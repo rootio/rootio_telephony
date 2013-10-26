@@ -115,7 +115,7 @@ def get_caller(func):
             db.session.add(m)
             db.session.commit()      
         else:
-            if parameters.get('CallStatus') == 'ringing'
+            if parameters.get('CallStatus') == 'ringing':
                 c = get_or_create(db.session, Call, message_uuid = parameters.get('CallUUID')).id
                 c.call_uuid = parameters.get('CallUUID')
                 c.start_time = datetime.datetime.now()                                                                     
@@ -124,7 +124,7 @@ def get_caller(func):
                 print "about to commit" + str(c.__dict__)
                 db.session.add(c)
                 db.session.commit()
-            if parameters.get('CallStatus') == 'completed'
+            if parameters.get('CallStatus') == 'completed':
                 c = get_or_create(db.session, Call, message_uuid = parameters.get('CallUUID')).id
                 c.end_time = datetime.datetime.now()                                                                     
                 print "about to commit" + str(c.__dict__)
