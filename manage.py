@@ -4,9 +4,11 @@ from flask.ext.script import Manager, Shell
 from telephony_server import telephony_server,db
 
 def _make_context():
+    import rootio.telephony.models
+    import rootio.radio.models
     return dict(db=db, t_models=rootio.telephony.models, r_models=rootio.radio.models)
-    
-manager = Manager(telephony_server)  
+
+manager = Manager(telephony_server)
 manager.add_command("sh", Shell(make_context=_make_context))
 
 
