@@ -107,7 +107,7 @@ def get_caller(func):
             m.sendtime = parameters.get('edt')
             m.text = parameters.get('body')
             m.from_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number = parameters.get('from_number'), number = parameters.get('from_number')).id
-            m.to_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number = parameters.get('to'), number = parameters.get('to')).id         
+            m.to_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number = parameters.get('fr'), number = parameters.get('fr')).id         
             db.session.add(m)
             db.session.commit()      
         else:
