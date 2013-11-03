@@ -9,7 +9,7 @@ Invoked by a python action in the chatplan
 import sys
 import freeswitch
 import requests,json
-telephony_server_ip   = "http://176.58.125.166/~csik/p/sms_server/in"   
+TELEPHONY_SERVER_IP   = "http://176.58.125.166/~csik/p/sms_server/in"   
 #telephony_server_port = "80"
 
 def chat(message, args):
@@ -29,7 +29,7 @@ def chat(message, args):
                 'body'                  :body,
             }            
     data = json.dumps(payload)         
-    r = requests.get(telephony_server_ip, params = payload)
+    r = requests.get(TELEPHONY_SERVER_IP, params = payload)
     if not r.status_code==200:
         freeswitch.consoleLog("info","Problem sending....")  
         freeswitch.consoleLog("info", str(r.status_code)+'\n')

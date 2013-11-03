@@ -28,6 +28,18 @@ def git_update(branch = 'master'):
         if stash_str.strip() != 'No local changes to save':
             run("git stash pop")
 
+def run_tel():
+    with cd(env.project_root):
+        with virtualenv():
+		  run('screen -d -m python telephony_server.py; sleep 1')
+
+def run_hack():
+    with cd('/home/csik/public_python/hack/deploy'):
+        with virtualenv():
+            run('screen -d -m python hack.py; sleep 1')
+
+def kill_py():
+    run('killall python')
 
 def restart_apache():
     sudo("/etc/init.d/apache2 graceful")

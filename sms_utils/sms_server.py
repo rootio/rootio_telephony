@@ -10,8 +10,8 @@ import requests
 import urllib2
 
 
-GOIP_server = '127.0.0.1' #'172.248.114.178'
-telephony_server = '127.0.0.1:5000/sms/in'
+GOIP_SERVER_IP = '127.0.0.1' #'172.248.114.178'
+TELEPHONY_SERVER_IP = '127.0.0.1:5000/sms/in'
 sys.path.append('/home/csik/public_python/sms_server/deploy') #move
 
 app = Flask(__name__)    
@@ -99,14 +99,14 @@ def sms_in():
                 'from_number': from_number, 
                 'body': body,
                }
-    r= requests.get('http://127.0.0.1:5000/sms/in',params=payload)    
+    r= requests.get(TELEPHONY_SERVER_IP,params=payload)    
     print r.text
     return "looks alright " + str(uuid)
     #return str(str(edt)+'\n'+fr+'->'+to+'\n'+from_number+'\n'+body+'\n'+uuid) 
       
 if __name__ == "__main__":
     app.run(debug=True)
-    r = requests.get('http://'+GOIP_server+'/init_goip')
+    r = requests.get('http://'+GOIP_SERVER_IP+'/init_goip')
                                 
     
     

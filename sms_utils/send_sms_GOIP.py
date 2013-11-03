@@ -1,6 +1,7 @@
 import lxml.html
 import requests, base64, urllib, urllib2
 import redis
+from config import GOIP_PASSWORD
                                                                             
 def create_flags():
     #make some (hopefully) thread-safe flags for checking if we're already logged in to GOIP 
@@ -15,7 +16,7 @@ def init():
     Logs in to goip with auth credentials
     """    
     s = requests.Session()
-    s.auth=('admin', 'argh')
+    s.auth=('admin', GOIP_PASSWORD)
     goip_page = s.get("http://192.168.8.1/default/en_US/tools.html?type=sms")        
     if not goip_page.status_code==200:
         print "Problem authorizing...."

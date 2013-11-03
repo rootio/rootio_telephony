@@ -2,6 +2,7 @@
 from flask import Flask, request, render_template
 from flask import request
 from flask.ext.sqlalchemy import SQLAlchemy
+
 from utils import call
 import utils
 
@@ -18,24 +19,17 @@ from functools import wraps
 from yapsy.PluginManager import PluginManager
 import logging
 
+from config import *
+
 telephony_server = Flask("ResponseServer")
 telephony_server.debug = True
-
 
 logging.basicConfig(level=logging.DEBUG)
-GOIP_server = '127.0.0.1' #'172.248.114.178'
-telephony_ip = 'http://176.58.125.166'
 
-SHOW_HOST = '0784821131'
-ANSWERED = 'http://127.0.0.1:5000/'
-SOUNDS = 'http://176.58.125.166/~csik/sounds/english/'
-
-telephony_server = Flask("ResponseServer")
-telephony_server.debug = True
-
-from rootio.extensions import db #expection symlink of rootio in own directory
-telephony_server.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:NLPog1986@localhost'
+from rootio.extensions import db #expects symlink of rootio in own directory
+telephony_server.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 db = SQLAlchemy(telephony_server)
+
 from rootio.telephony.models import *
 from rootio.radio.models import *
                           
@@ -85,7 +79,7 @@ def heartbeat():
     return "OK"
                                 
 
-def get_caller(func):
+def preload_caller(func):
     @wraps(func) 
     def inner(*args, **kwargs):         
         print """"#######################################################################
@@ -115,6 +109,7 @@ def get_caller(func):
             db.session.add(m)
             db.session.commit()      
         else:
+            #todo, add fields to model for different call stages and times, like ringing, etc.
             if parameters.get('CallStatus') == 'ringing':
                 c = get_or_create(db.session, Call, call_uuid = parameters.get('CallUUID'))
                 c.call_uuid = parameters.get('CallUUID')
@@ -127,8 +122,8 @@ def get_caller(func):
             if parameters.get('CallStatus') == 'completed':
                 c = get_or_create(db.session, Call, call_uuid = parameters.get('CallUUID'))
                 c.end_time = datetime.datetime.now()                                                                     
-                print "about to commit" + str(c.__dict__)
-                db.session.add(c)
+                print "about to commit" + str(c.__dict__)   
+                db.session.add(c)   
                 db.session.commit()
                                                                  
         return func(*args, **kwargs)
@@ -136,7 +131,7 @@ def get_caller(func):
         
         
 @telephony_server.route('/sms/in', methods=['GET', 'POST'])   
-@get_caller
+@preload_caller
 def sms_in(parameters):
     """Receive an sms
     { 'uuid': uuid, 
@@ -183,14 +178,14 @@ def hostwait():
     else:
         print request.args.items()
     r = plivohelper.Response()
-    r.addPlay(telephony_ip+"/~csik/sounds/english/Hello_Host.mp3")
-    r.addPlay(telephony_ip+"/~csik/sounds/english/You_Have_X_Listeners.mp3")
-    r.addPlay(telephony_ip+"/~csik/sounds/english/Instructions.mp3")
+    r.addPlay(TELEPHONY_SERVER_IP+"/~csik/sounds/english/Hello_Host.mp3")
+    r.addPlay(TELEPHONY_SERVER_IP+"/~csik/sounds/english/You_Have_X_Listeners.mp3")
+    r.addPlay(TELEPHONY_SERVER_IP+"/~csik/sounds/english/Instructions.mp3")
     print "RESTXML Response => %s" % r
     return render_template('response_template.xml', response=r)
 
 @telephony_server.route('/answered/', methods=['GET', 'POST'])
-@get_caller 
+@preload_caller 
 def answered(parameters):
     # Post params- 'CallUUID': unique id of call, 'Direction': direction of call,
     #               'To': Number which was called, 'From': calling number,
