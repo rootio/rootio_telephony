@@ -6,15 +6,15 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from utils import call
 import utils
 
-import sys, os
+import sys
+import os
 import datetime
 import requests
 
 
 import plivohelper
-         
-                 
-from functools import wraps 
+
+from functools import wraps
 
 from yapsy.PluginManager import PluginManager
 import logging
@@ -24,15 +24,37 @@ from config import *
 telephony_server = Flask("ResponseServer")
 telephony_server.debug = True
 
-logging.basicConfig(level=logging.DEBUG)
+# Logging
+try:
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
 
-from rootio.extensions import db #expects symlink of rootio in own directory
+    # create a file handler
+    handler = logging.FileHandler('logs/telephony.log', mode='a')
+    handler.setLevel(logging.INFO)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+
+    # create a logging format
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    ch.setFormatter(formatter)
+
+    # add the handlers to the logger
+    logger.addHandler(handler)
+    logger.addHandler(ch)
+except Exception, e:
+    logger.error('Failed to open logger', exc_info=True)
+
+from rootio.extensions import db  # expects symlink of rootio in own directory
 telephony_server.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 db = SQLAlchemy(telephony_server)
 
 from rootio.telephony.models import *
 from rootio.radio.models import *
-                          
+
+
 def get_or_create(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
     if instance:
@@ -41,60 +63,64 @@ def get_or_create(session, model, **kwargs):
         instance = model(**kwargs)
         db.session.add(instance)
         db.session.commit()
-        return instance  
+        return instance
 
 
 @telephony_server.errorhandler(404)
 def page_not_found(error):
     """error page"""
-    print "404 page not found"
+    logger.info("404 page not found")
     return 'This URL does not exist', 404
+
 
 @telephony_server.route('/ringing/', methods=['GET', 'POST'])
 def ringing():
     """ringing URL"""
-    # Post params- 'to': ringing number, 'request_uuid': request id given at the time of api call
-    print "We got a ringing notification"
+    # Post params- 'to': ringing number,
+    # request_uuid': request id given at the time of api call
+    logger.info("We got a ringing notification")
     return "OK"
+
 
 @telephony_server.route('/hangup/', methods=['GET', 'POST'])
 def hangup():
     """hangup URL"""
     # Post params- 'request_uuid': request id given at the time of api call,
     #               'CallUUID': unique id of call, 'reason': reason of hangup
-    print "We got a hangup notification"
+    logger.info("We got a hangup notification")
     c = Call()
 
-    return "OK"                                  
-    
+    return "OK"
+
+
 @telephony_server.route('/heartbeat/', methods=['GET', 'POST'])
 def heartbeat():
     """Call Heartbeat URL"""
-    print "We got a call heartbeat notification\n"
+    logger.info("We got a call heartbeat notification\n")
 
     if request.method == 'POST':
         print request.form
     else:
-        print request.args      
+        print request.args
     return "OK"
-                                
+
 
 def preload_caller(func):
-    @wraps(func) 
-    def inner(*args, **kwargs):         
-        print """"#######################################################################
+    @wraps(func)
+    def inner(*args, **kwargs):
+        logger.info(""""#######################################################################
                   #     entering function: ---------------> {0}                         
-                  #######################################################################""".format(func.func_name)
-        if request.method == 'POST':  
+                  #######################################################################""".format(func.func_name))
+        if request.method == 'POST':
             parameters = dict(request.form.items())
         else:         
             parameters = dict(request.args.items())    
         try:                                                            
             if parameters.get('uuid'):
-                print request.method + ", CallUUID: {0}".format(parameters['uuid']) 
+                logger.info(request.method + ", CallUUID: {0}".format(parameters['uuid']))
             else:
-                print request.method + ", CallUUID: {0}".format(parameters['CallUUID']) 
-            print parameters  
+                logger.info(request.method + ", CallUUID: {0}".format(parameters['CallUUID']))
+            logger.info("Parameters = {}".format(str(parameters)))  
             kwargs['parameters'] = parameters
         except:
             pass                     
@@ -103,29 +129,28 @@ def preload_caller(func):
             m.message_uuid = parameters.get('uuid')
             m.sendtime = parameters.get('edt')
             m.text = parameters.get('body')
-            m.from_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number = parameters.get('from_number'), number = parameters.get('from_number')).id
-            m.to_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number = parameters.get('fr'), number = parameters.get('fr')).id         
-            print "about to commit" + str(m.__dict__)
+            m.from_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number=parameters.get('from_number'), number=parameters.get('from_number')).id
+            m.to_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number=parameters.get('fr'), number=parameters.get('fr')).id         
+            logger.info("about to commit {}".format(str(m.__dict__)))
             db.session.add(m)
             db.session.commit()      
         else:
             #todo, add fields to model for different call stages and times, like ringing, etc.
             if parameters.get('CallStatus') == 'ringing':
-                c = get_or_create(db.session, Call, call_uuid = parameters.get('CallUUID'))
+                c = get_or_create(db.session, Call, call_uuid=parameters.get('CallUUID'))
                 c.call_uuid = parameters.get('CallUUID')
                 c.start_time = datetime.datetime.now()                                                                     
-                c.from_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number = parameters.get('From'), number = parameters.get('From')).id
-                c.to_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number = parameters.get('To'), number = parameters.get('To')).id      
-                print "about to commit" + str(c.__dict__)
+                c.from_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number=parameters.get('From'), number=parameters.get('From')).id
+                c.to_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number=parameters.get('To'), number=parameters.get('To')).id      
+                logger.info("about to commit {}".format(str(c.__dict__)))
                 db.session.add(c)
                 db.session.commit()
             if parameters.get('CallStatus') == 'completed':
-                c = get_or_create(db.session, Call, call_uuid = parameters.get('CallUUID'))
+                c = get_or_create(db.session, Call, call_uuid=parameters.get('CallUUID'))
                 c.end_time = datetime.datetime.now()                                                                     
-                print "about to commit" + str(c.__dict__)   
+                logger.info("about to commit {}".format(str(m.__dict__)))   
                 db.session.add(c)   
-                db.session.commit()
-                                                                 
+                db.session.commit()            
         return func(*args, **kwargs)
     return inner
         
@@ -142,12 +167,10 @@ def sms_in(parameters):
       'body': body,
     } 
     """
-    print "Parameters =" + str(parameters)    
-    print "We received an SMS"      
-    print parameters['from_number']
-    print SHOW_HOST
-    print parameters['from_number'] == SHOW_HOST
-    print str(parameters['from_number']) == SHOW_HOST                
+    logger.info("Parameters =" + str(parameters))    
+    logger.info("We received an SMS")      
+    logger.info(parameters['from_number'])
+    logger.info(str(parameters['from_number']) == SHOW_HOST)                
     #look at conferenceplay
     #if parameters['from_number'] == SHOW_HOST or parameters['from_number'] == SHOW_HOST[2:]:     
     #    answered_url = "http://127.0.0.1:5000/answered/"
@@ -157,32 +180,35 @@ def sms_in(parameters):
     #    utils.call("sofia/gateway/switch2voip/",parameters['from_number'], answered_url)       
     return "OK"
 
+
 @telephony_server.route('/waitmusic/', methods=['GET', 'POST'])
 def waitmusic():
     if request.method == 'POST':
-        print request.form.items()
+        logger.info(str(request.form.items()))
     else:
-        print request.args.items()
+        logger.info(str(request.args.items()))
     r = plivohelper.Response()     
     #r.addSpeak('Your mama is so fat.')
     #r.addSpeak("Your father was a hampster and your mother smelt of elderberries.")
     r.addPlay("/usr/local/freeswitch/sounds/en/us/callie/ivr/8000/ivr-welcome.wav")
     r.addPlay("/usr/local/freeswitch/sounds/music/8000/suite-espanola-op-47-leyenda.wav")
-    print "RESTXML Response => %s" % r
+    logger.info("RESTXML Response => {}".format(r))
     return render_template('response_template.xml', response=r)    
+
 
 @telephony_server.route('/hostwait/', methods=['GET', 'POST'])
 def hostwait():
     if request.method == 'POST':
-        print request.form.items()
+        logger.info(str(request.form.items())
     else:
-        print request.args.items()
+        logger.info(str(request.args.items())
     r = plivohelper.Response()
     r.addPlay(TELEPHONY_SERVER_IP+"/~csik/sounds/english/Hello_Host.mp3")
     r.addPlay(TELEPHONY_SERVER_IP+"/~csik/sounds/english/You_Have_X_Listeners.mp3")
     r.addPlay(TELEPHONY_SERVER_IP+"/~csik/sounds/english/Instructions.mp3")
-    print "RESTXML Response => %s" % r
+    logger.info("RESTXML Response => {}".format(r))
     return render_template('response_template.xml', response=r)
+
 
 @telephony_server.route('/answered/', methods=['GET', 'POST'])
 @preload_caller 
@@ -195,8 +221,8 @@ def answered(parameters):
                                                                           
     r = plivohelper.Response() 
     from_number = parameters.get('From')
-    print SHOW_HOST
-    print "Match Host: " + str(str(parameters['From']) == SHOW_HOST or str(parameters['From']) == SHOW_HOST[2:])                 
+    logger.info(SHOW_HOST)
+    logger.info("Match Host: " + str(str(parameters['From']) == SHOW_HOST or str(parameters['From']) == SHOW_HOST[2:]))               
     if str(parameters['From']) == SHOW_HOST or str(parameters['From']) == SHOW_HOST[2:] :     
         p = r.addConference("plivo", muted=False, 
                             enterSound="beep:2", exitSound="beep:1",
@@ -209,7 +235,7 @@ def answered(parameters):
                             startConferenceOnEnter=True, endConferenceOnExit=False,
                             waitSound = ANSWERED+'waitmusic/',
                             timeLimit = 0, hangupOnStar=True)
-    print "RESTXML Response => %s" % r
+    logger.info("RESTXML Response => {}".format(r))
     return render_template('response_template.xml', response=r)
 
 
@@ -232,7 +258,7 @@ def plugins():
 
 if __name__ == '__main__':
     if not os.path.isfile("templates/response_template.xml"):
-        print "Error : Can't find the XML template : templates/response_template.xml"
+        logger.info("Error : Can't find the XML template : templates/response_template.xml")
     else:
         telephony_server.run(host='127.0.0.1', port=5000)
 

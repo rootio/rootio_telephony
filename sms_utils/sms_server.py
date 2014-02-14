@@ -19,6 +19,7 @@ from rootio.extensions import db
 from config import SQLALCHEMY_DATABASE_URI
 app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 db = SQLAlchemy(app)
+
 from rootio.telephony.models import PhoneNumber, Message       
 
 def debug(request): 
@@ -35,6 +36,7 @@ def debug(request):
     for deet in deets:
         s += str(deet)
     print s 
+    return deets
 
 
 @app.route("/", methods=['GET', 'POST'])
