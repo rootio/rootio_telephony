@@ -3,6 +3,9 @@ from flask import Flask, request, render_template
 from flask import request
 from flask.ext.sqlalchemy import SQLAlchemy
 
+from flask.ext.admin import Admin
+from flask.ext.admin.contrib.sqla import ModelView
+
 from utils import call
 import utils
 
@@ -23,6 +26,9 @@ from config import *
 
 telephony_server = Flask("ResponseServer")
 telephony_server.debug = True
+
+admin = Admin(telephony_server)
+
 
 # Logging
 try:
@@ -54,6 +60,14 @@ db = SQLAlchemy(telephony_server)
 from rootio.telephony.models import *
 from rootio.radio.models import *
 
+admin.add_view(ModelView(PhoneNumber, db.session))
+admin.add_view(ModelView(Message, db.session))
+admin.add_view(ModelView(Call, db.session))
+admin.add_view(ModelView(Person, db.session))
+admin.add_view(ModelView(Location, db.session))
+admin.add_view(ModelView(Station, db.session))
+admin.add_view(ModelView(Program, db.session))
+admin.add_view(ModelView(Episode, db.session))
 
 def get_or_create(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
@@ -122,7 +136,8 @@ def preload_caller(func):
                 logger.info(request.method + ", CallUUID: {0}".format(parameters['CallUUID']))
             logger.info("Parameters = {}".format(str(parameters)))  
             kwargs['parameters'] = parameters
-        except:
+        except Exception, e:
+            logger.error('Failed to get uuid', exc_info=True)
             pass                     
         if func.func_name == 'sms_in':
             m = Message()
@@ -199,9 +214,9 @@ def waitmusic():
 @telephony_server.route('/hostwait/', methods=['GET', 'POST'])
 def hostwait():
     if request.method == 'POST':
-        logger.info(str(request.form.items())
+        logger.info(str(request.form.items()))
     else:
-        logger.info(str(request.args.items())
+        logger.info(str(request.args.items()))
     r = plivohelper.Response()
     r.addPlay(TELEPHONY_SERVER_IP+"/~csik/sounds/english/Hello_Host.mp3")
     r.addPlay(TELEPHONY_SERVER_IP+"/~csik/sounds/english/You_Have_X_Listeners.mp3")
