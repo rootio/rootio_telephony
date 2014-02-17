@@ -80,6 +80,20 @@ def get_or_create(session, model, **kwargs):
         return instance
 
 
+def debug(request, url="url"): 
+    logger.info( "#####ENTERING {0} #####".format(url))
+    if request.method == 'POST':
+        deets = request.form.items()
+        logger.info(str(deets))
+        method = 'POST'
+    else:
+        deets = request.args.items()
+        logger.info(str(deets))
+        method = 'GET'
+    deets = dict(deets)
+    return deets
+
+
 @telephony_server.errorhandler(404)
 def page_not_found(error):
     """error page"""
@@ -122,9 +136,9 @@ def heartbeat():
 def preload_caller(func):
     @wraps(func)
     def inner(*args, **kwargs):
-        logger.info(""""#######################################################################
-                  #     entering function: ---------------> {0}                         
-                  #######################################################################""".format(func.func_name))
+        logger.info("""###################################################
+            #     entering function: ---------------> {0}     #
+            ###################################################""".format(func.func_name))
         if request.method == 'POST':
             parameters = dict(request.form.items())
         else:         
@@ -252,6 +266,36 @@ def answered(parameters):
                             timeLimit = 0, hangupOnStar=True)
     logger.info("RESTXML Response => {}".format(r))
     return render_template('response_template.xml', response=r)
+
+@telephony_server.route('/confer/<station_id>/<program_id>/<episode_id>', methods=['GET', 'POST'])
+@preload_caller 
+def confer(parameters):
+    # Post params- 'CallUUID': unique id of call, 'Direction': direction of call,
+    #               'To': Number which was called, 'From': calling number,
+    #               If Direction is outbound then 2 additional params:
+    #               'ALegUUID': Unique Id for first leg,
+    #               'ALegRequestUUID': request id given at the time of api call
+                                                                          
+    r = plivohelper.Response() 
+    from_number = parameters.get('From')
+    logger.info(SHOW_HOST)
+    logger.info("Match Host: " + str(str(parameters['From']) == SHOW_HOST or str(parameters['From']) == SHOW_HOST[2:]))               
+    if str(parameters['From']) == SHOW_HOST or str(parameters['From']) == SHOW_HOST[2:] :     
+        p = r.addConference("plivo", muted=False, 
+                            enterSound="beep:2", exitSound="beep:1",
+                            startConferenceOnEnter=True, endConferenceOnExit=True,
+                            waitSound = ANSWERED+'hostwait/',
+                            timeLimit = 0, hangupOnStar=True)
+    else:
+        p = r.addConference("plivo", muted=False, 
+                            enterSound="beep:2", exitSound="beep:1",
+                            startConferenceOnEnter=True, endConferenceOnExit=False,
+                            waitSound = ANSWERED+'waitmusic/',
+                            timeLimit = 0, hangupOnStar=True)
+    logger.info("RESTXML Response => {}".format(r))
+    return render_template('response_template.xml', response=r)
+
+
 
 
 def main():
