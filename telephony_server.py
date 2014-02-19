@@ -69,6 +69,8 @@ admin.add_view(ModelView(Station, db.session))
 admin.add_view(ModelView(Program, db.session))
 admin.add_view(ModelView(Episode, db.session))
 
+SHOW_HOST = '16176424223'
+
 def get_or_create(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
     if instance:

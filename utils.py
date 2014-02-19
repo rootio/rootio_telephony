@@ -106,8 +106,8 @@ def bulk_call(gateway, phone_numbers, answered_URL):
     # Initiate a new outbound call using a HTTP POST
     # All parameters for bulk calls shall be separated by a delimeter
     call_params = {
-        'Delimiter' : '>', # Delimter for the bulk list
-        'From': SHOW_HOST, # Caller Id
+        'Delimiter' : '>', # Delimter for the bulk lst
+        'From': '16176424223', # Caller Id
         'To' : phone_numbers, # User Numbers to Call separated by delimeter
         'Gateways' : gateway, # Gateway string for each number separated by delimeter
         'GatewayCodecs' : "", # Codec string as needed by FS for each gateway separated by delimeter
