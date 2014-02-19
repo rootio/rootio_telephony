@@ -72,6 +72,7 @@ admin.add_view(ModelView(Episode, db.session))
 SHOW_HOST = '16176424223'
 ANSWERED = 'http://127.0.0.1:5000/'  
 SOUNDS = 'http://176.58.125.166/~csik/sounds/swahili/'     
+TELEPHONY_SERVER_IP = 'http://176.58.125.166'
 
 def get_or_create(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
