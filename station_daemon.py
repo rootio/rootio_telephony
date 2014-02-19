@@ -59,6 +59,7 @@ class StationDaemon(Station):
         logger.info("Hello World")
         self.gateway = 'sofia/gateway/utl'
         self.caller_queue = []
+        self.active_workers = []
 
         try:
             original = db.session.query(Station).filter(Station.id == id).one()
@@ -78,14 +79,17 @@ class StationDaemon(Station):
         self.id = original.id
         self.owner_id = original.owner_id
 
+        #  start listeners
         self.start_listeners()
 
     #  start listeners - so far just a test section
     def start_listeners(self):
-        self.sms_listener = Process(target=self.listener, args=(str('sms.station.'+str(self.id)), self.process_message))
-        self.sms_listener.start()
-        self.call_listener = Process(target=self.listener, args=(str('call.station.'+str(self.id)), self.process_message))
-        self.call_listener.start()
+        sms_listener = Process(target=self.listener, args=(str('sms.station.'+str(self.id)), self.process_message))
+        sms_listener.start()
+        self.active_workers.append(sms_listener)
+        call_listener = Process(target=self.listener, args=(str('call.station.'+str(self.id)), self.process_message))
+        call_listener.start()
+        self.active_workers.append(call_listener)
 
     #  generic process, replace with sms, call, load program, etc.
     def process_message(self, msg):
