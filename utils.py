@@ -3,6 +3,8 @@ import plivohelper
 from time import sleep
 
 show_host = '+256784821131'
+ANSWERED = 'http://127.0.0.1:5000/'  
+SOUNDS = 'http://176.58.125.166/~csik/sounds/swahili/'
 
 def call(gateway, phone_number, answered):
     """
