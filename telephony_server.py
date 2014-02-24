@@ -13,6 +13,7 @@ import sys
 import os
 import datetime
 import requests
+import time
 
 
 import plivohelper
@@ -306,8 +307,9 @@ def root(parameters):
     elif request.path == "/answered/":
         if parameters.get('CallStatus') == "ringing":
             logger.info("Ringing call from {0} to {1}".format(parameters.get('From'), parameters.get('To')))
-            if parameters.get('From') == '0718451574':
+            if parameters.get('From') == '16176424223':
                 logger.info("Choosing to not answer")
+                time.sleep(5)
                 return "OK"
         #  This is where station daemons are contacted
         r = plivohelper.Response() 
