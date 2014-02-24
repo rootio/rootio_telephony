@@ -308,7 +308,7 @@ def root(parameters):
         if parameters.get('CallStatus') == "ringing":
             logger.info("Ringing call from {0} to {1}".format(parameters.get('From'), parameters.get('To')))
             logger.info(str(parameters.get('From') == '16176424223'))
-            logger.info(str(parameters.get('From'))
+            logger.info(str(parameters.get('From')))
             logger.info('16176424223')
             if parameters.get('From') == '16176424223':
                 logger.info("Choosing to not answer")
