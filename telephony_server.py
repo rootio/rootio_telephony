@@ -178,7 +178,7 @@ def preload_caller(func):
             if parameters.get('CallStatus') == 'ringing':
                 c = get_or_create(db.session, Call, call_uuid=parameters.get('CallUUID'))
                 c.call_uuid = parameters.get('CallUUID')
-                c.start_time = datetime.datetime.now()                                                                     
+                c.start_time = datetime.now()                                                                     
                 c.from_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number=parameters.get('From'), number=parameters.get('From')).id
                 c.to_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number=parameters.get('To'), number=parameters.get('To')).id      
                 logger.info("about to commit {}".format(str(c.__dict__)))
@@ -186,7 +186,7 @@ def preload_caller(func):
                 db.session.commit()
             if parameters.get('CallStatus') == 'completed':
                 c = get_or_create(db.session, Call, call_uuid=parameters.get('CallUUID'))
-                c.end_time = datetime.datetime.now()                                                                     
+                c.end_time = datetime.now()                                                                     
                 logger.info("about to commit {}".format(str(m.__dict__)))   
                 db.session.add(c)   
                 db.session.commit()            
@@ -277,9 +277,9 @@ def answered(parameters):
     logger.info("RESTXML Response => {}".format(r))
     return render_template('response_template.xml', response=r)
 
-@telephony_server.route('/confer/<schedule_program_id>/<action>', methods=['GET', 'POST'])
+@telephony_server.route('/confer/<schedule_program_id>/<action>/', methods=['GET', 'POST'])
 @preload_caller 
-def confer(parameters):
+def confer(parameters, schedule_program_id, action):
     # Post params- 'CallUUID': unique id of call, 'Direction': direction of call,
     #               'To': Number which was called, 'From': calling number,
     #               If Direction is outbound then 2 additional params:
@@ -295,23 +295,14 @@ def confer(parameters):
     elif action == "hangup":
         logger.info("Hangup for scheduled_program {}".format(schedule_program_id))
         return "OK"
-    else if action == "answered":
+    elif action == "answered":
         r = plivohelper.Response() 
         from_number = parameters.get('From')
-        logger.info(SHOW_HOST)
-        logger.info("Match Host: " + str(str(parameters['From']) == SHOW_HOST or str(parameters['From']) == SHOW_HOST[2:]))               
-        if str(parameters['From']) == SHOW_HOST or str(parameters['From']) == SHOW_HOST[2:] :     
-            p = r.addConference("plivo", muted=False, 
-                                enterSound="beep:2", exitSound="beep:1",
-                                startConferenceOnEnter=True, endConferenceOnExit=True,
-                                waitSound = ANSWERED+'hostwait/',
-                                timeLimit = 0, hangupOnStar=True)
-        else:
-            p = r.addConference("plivo", muted=False, 
-                                enterSound="beep:2", exitSound="beep:1",
-                                startConferenceOnEnter=True, endConferenceOnExit=False,
-                                waitSound = ANSWERED+'waitmusic/',
-                                timeLimit = 0, hangupOnStar=True)
+        p = r.addConference("plivo", muted=False, 
+                            enterSound="beep:2", exitSound="beep:1",
+                            startConferenceOnEnter=True, endConferenceOnExit=False,
+                            waitSound = ANSWERED+'waitmusic/',
+                            timeLimit = 0, hangupOnStar=True)
         logger.info("RESTXML Response => {}".format(r))
         return render_template('response_template.xml', response=r)
     else:
