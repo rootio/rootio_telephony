@@ -227,33 +227,33 @@ def hostwait():
     return render_template('response_template.xml', response=r)
 
 
-@telephony_server.route('/answered/', methods=['GET', 'POST'])
-@preload_caller 
-def answered(parameters):
-    # Post params- 'CallUUID': unique id of call, 'Direction': direction of call,
-    #               'To': Number which was called, 'From': calling number,
-    #               If Direction is outbound then 2 additional params:
-    #               'ALegUUID': Unique Id for first leg,
-    #               'ALegRequestUUID': request id given at the time of api call
-                                                                          
-    r = plivohelper.Response() 
-    from_number = parameters.get('From')
-    logger.info(SHOW_HOST)
-    logger.info("Match Host: " + str(str(parameters['From']) == SHOW_HOST or str(parameters['From']) == SHOW_HOST[2:]))               
-    if str(parameters['From']) == SHOW_HOST or str(parameters['From']) == SHOW_HOST[2:] :     
-        p = r.addConference("plivo", muted=False, 
-                            enterSound="beep:2", exitSound="beep:1",
-                            startConferenceOnEnter=True, endConferenceOnExit=True,
-                            waitSound = ANSWERED+'hostwait/',
-                            timeLimit = 0, hangupOnStar=True)
-    else:
-        p = r.addConference("plivo", muted=False, 
-                            enterSound="beep:2", exitSound="beep:1",
-                            startConferenceOnEnter=True, endConferenceOnExit=False,
-                            waitSound = ANSWERED+'waitmusic/',
-                            timeLimit = 0, hangupOnStar=True)
-    logger.info("RESTXML Response => {}".format(r))
-    return render_template('response_template.xml', response=r)
+#@telephony_server.route('/answered/', methods=['GET', 'POST'])
+#@preload_caller 
+#def answered(parameters):
+#    # Post params- 'CallUUID': unique id of call, 'Direction': direction of call,
+#    #               'To': Number which was called, 'From': calling number,
+#    #               If Direction is outbound then 2 additional params:
+#    #               'ALegUUID': Unique Id for first leg,
+#    #               'ALegRequestUUID': request id given at the time of api call
+#                                                                          
+#    r = plivohelper.Response() 
+#    from_number = parameters.get('From')
+#    logger.info(SHOW_HOST)
+#    logger.info("Match Host: " + str(str(parameters['From']) == SHOW_HOST or str(parameters['From']) == SHOW_HOST[2:]))               
+#    if str(parameters['From']) == SHOW_HOST or str(parameters['From']) == SHOW_HOST[2:] :     
+#        p = r.addConference("plivo", muted=False, 
+#                            enterSound="beep:2", exitSound="beep:1",
+#                            startConferenceOnEnter=True, endConferenceOnExit=True,
+#                            waitSound = ANSWERED+'hostwait/',
+#                            timeLimit = 0, hangupOnStar=True)
+#    else:
+#        p = r.addConference("plivo", muted=False, 
+#                            enterSound="beep:2", exitSound="beep:1",
+#                            startConferenceOnEnter=True, endConferenceOnExit=False,
+#                            waitSound = ANSWERED+'waitmusic/',
+#                            timeLimit = 0, hangupOnStar=True)
+#    logger.info("RESTXML Response => {}".format(r))
+#    return render_template('response_template.xml', response=r)
 
 @telephony_server.route('/confer/<schedule_program_id>/<action>/', methods=['GET', 'POST'])
 @preload_caller 
