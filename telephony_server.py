@@ -187,7 +187,7 @@ def preload_caller(func):
             if parameters.get('CallStatus') == 'completed':
                 c = get_or_create(db.session, Call, call_uuid=parameters.get('CallUUID'))
                 c.end_time = datetime.now()                                                                     
-                logger.info("about to commit {}".format(str(m.__dict__)))   
+                logger.info("about to commit {}".format(str(c.__dict__)))   
                 db.session.add(c)   
                 db.session.commit()            
         return func(*args, **kwargs)
