@@ -3,6 +3,8 @@
 #SEE https://learning-0mq-with-pyzmq.readthedocs.org/en/latest/pyzmq/multisocket/tornadoeventloop.html
 #for info on listeners
 
+from config import *
+
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
 
@@ -16,6 +18,7 @@ import random
 
 from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
+
 
 # get access to telephony & web database
 telephony_server = Flask("ResponseServer")
@@ -98,7 +101,7 @@ class StationDaemon(Station):
         #print pickle.loads(m)
 
     def listener(self, channel, function):
-        port = "5557"
+        port = MESSAGE_QUEUE_PORT
         context = zmq.Context()
         socket_sub = context.socket(zmq.SUB)
         socket_sub.connect("tcp://localhost:%s" % port)
@@ -119,7 +122,7 @@ class StationDaemon(Station):
 
 # testing message server to see if daemons are receiving
 def test_receivers():
-    port = "5557"
+    port = MESSAGE_QUEUE_PORT
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
     socket.bind("tcp://*:%s" % port)

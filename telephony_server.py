@@ -69,10 +69,6 @@ admin.add_view(ModelView(Station, db.session))
 admin.add_view(ModelView(Program, db.session))
 admin.add_view(ModelView(Episode, db.session))
 
-SHOW_HOST = '16176424223'
-ANSWERED = 'http://127.0.0.1:5000/'  
-SOUNDS = 'http://176.58.125.166/~csik/sounds/swahili/'     
-TELEPHONY_SERVER_IP = 'http://176.58.125.166'
 
 def get_or_create(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
@@ -144,20 +140,28 @@ def preload_caller(func):
         logger.info("""###################################################
             #     entering function: ---------------> {0}     #
             ###################################################""".format(func.func_name))
+        #  Separate request into a single dict called "parameters"
         if request.method == 'POST':
             parameters = dict(request.form.items())
+            parameters['request_method'] = request.method
         else:         
             parameters = dict(request.args.items())    
+            parameters['request_method'] = request.method
+
+        #  Standardize uuid
         try:                                                            
             if parameters.get('uuid'):
                 logger.info(request.method + ", CallUUID: {0}".format(parameters['uuid']))
             else:
                 logger.info(request.method + ", CallUUID: {0}".format(parameters['CallUUID']))
+                parameters['uuid'] = parameters['CallUUID']
             logger.info("Parameters = {}".format(str(parameters)))  
             kwargs['parameters'] = parameters
         except Exception, e:
             logger.error('Failed to get uuid', exc_info=True)
             pass                     
+
+        #  Handle SMS in, different from calls
         if func.func_name == 'sms_in':
             m = Message()
             m.message_uuid = parameters.get('uuid')
@@ -170,6 +174,7 @@ def preload_caller(func):
             db.session.commit()      
         else:
             #todo, add fields to model for different call stages and times, like ringing, etc.
+            #TODO sent a message to a logger daemon rather than logging this directly, but perhaps increment a variable
             if parameters.get('CallStatus') == 'ringing':
                 c = get_or_create(db.session, Call, call_uuid=parameters.get('CallUUID'))
                 c.call_uuid = parameters.get('CallUUID')
@@ -272,7 +277,7 @@ def answered(parameters):
     logger.info("RESTXML Response => {}".format(r))
     return render_template('response_template.xml', response=r)
 
-@telephony_server.route('/confer/<station_id>/<program_id>/<episode_id>', methods=['GET', 'POST'])
+@telephony_server.route('/confer/<station_id>', methods=['GET', 'POST'])
 @preload_caller 
 def confer(parameters):
     # Post params- 'CallUUID': unique id of call, 'Direction': direction of call,
@@ -280,7 +285,8 @@ def confer(parameters):
     #               If Direction is outbound then 2 additional params:
     #               'ALegUUID': Unique Id for first leg,
     #               'ALegRequestUUID': request id given at the time of api call
-                                                                          
+
+    
     r = plivohelper.Response() 
     from_number = parameters.get('From')
     logger.info(SHOW_HOST)
