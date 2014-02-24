@@ -137,8 +137,9 @@ def heartbeat():
 def preload_caller(func):
     @wraps(func)
     def inner(*args, **kwargs):
-        logger.info("""###################################################
-            #     entering function: ---------------> {0}     #
+        logger.info("""
+            ###################################################
+            #     entering function: -------->   {0}     
             ###################################################""".format(func.func_name))
         #  Separate request into a single dict called "parameters"
         if request.method == 'POST':
@@ -296,6 +297,7 @@ def confer(parameters, schedule_program_id, action):
         logger.info("Hangup for scheduled_program {}".format(schedule_program_id))
         return "OK"
     elif action == "answered":
+        #  This is where station daemons are contacted
         r = plivohelper.Response() 
         from_number = parameters.get('From')
         p = r.addConference("plivo", muted=False, 
