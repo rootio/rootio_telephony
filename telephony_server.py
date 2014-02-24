@@ -298,7 +298,7 @@ def confer(parameters, schedule_program_id, action):
 def root(parameters):
     logger.info("Request.path:{}".format(request.path))
     
-    elif request.path == "/heartbeat/":
+    if request.path == "/heartbeat/":
         logger.info("Heartbeat for call from {0} to {1}".format(parameters.get('From'), parameters.get('To')))
         return "OK"
     elif parameters.get('CallStatus') == "completed":
