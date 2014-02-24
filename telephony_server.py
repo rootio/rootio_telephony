@@ -289,20 +289,23 @@ def confer(parameters, schedule_program_id, action):
         return "OK"
 
 #  This function should pretty much only be invoked for unsolicited calls 
-@telephony_server.route('/', methods=['GET', 'POST'])
-@telephony_server.route('/<action>/', methods=['GET', 'POST'])
+@telephony_server.route('/answered/', methods=['GET', 'POST'])
+@telephony_server.route('/ringing/', methods=['GET', 'POST'])
+@telephony_server.route('/heartbeat/', methods=['GET', 'POST'])
+@telephony_server.route('/hangup/', methods=['GET', 'POST'])
 @preload_caller 
-def root(parameters, action):
-    if action == "ringing":
-        logger.info("Ringing for scheduled_program {}".format(schedule_program_id))
+def root(parameters):
+    logger.info("Request.path:{}".format(request.path))
+    if request.path == "/ringing":
+        logger.info("Ringing call from {0} to {1}".format(parameters.get('From'), parameters.get('To')))
         return "OK"
-    elif action == "heartbeat":
-        logger.info("Heartbeat for scheduled_program {}".format(schedule_program_id))
+    elif request.path == "heartbeat":
+        logger.info("Heartbeat for call from {0} to {1}".format(parameters.get('From'), parameters.get('To')))
         return "OK"
-    elif action == "hangup":
-        logger.info("Hangup for scheduled_program {}".format(schedule_program_id))
+    elif request.path == "hangup":
+        logger.info("Hangup of call from {0} to {1}".format(parameters.get('From'), parameters.get('To')))
         return "OK"
-    elif action == "answered":
+    elif request.path == "answered":
         #  This is where station daemons are contacted
         r = plivohelper.Response() 
         from_number = parameters.get('From')
