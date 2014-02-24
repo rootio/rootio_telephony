@@ -110,7 +110,8 @@ def preload_caller(func):
             ###################################################
             #     entering function: -------->   {0}     
             ###################################################""".format(func.func_name))
-        #  Separate request into a single dict called "parameters"
+        #  Separate request into a single dict called "parameters" to erase the difference between 
+        #  get and post representations
         if request.method == 'POST':
             parameters = dict(request.form.items())
             parameters['request_method'] = request.method
@@ -118,14 +119,13 @@ def preload_caller(func):
             parameters = dict(request.args.items())    
             parameters['request_method'] = request.method
 
-        #  Standardize uuid
+        #  Print UUID and standardize it to uuid regardless, swap the original kwargs for our version
         try:                                                            
             if parameters.get('uuid'):
                 logger.info(request.method + ", CallUUID: {0}".format(parameters['uuid']))
             else:
                 logger.info(request.method + ", CallUUID: {0}".format(parameters['CallUUID']))
-                parameters['uuid'] = parameters['CallUUID']
-            logger.info("Parameters = {}".format(str(parameters)))  
+                parameters['uuid'] = parameters['CallUUID'] 
             # Here's where we swap the original kwargs for our version
             kwargs['parameters'] = parameters
         except Exception, e:
@@ -147,6 +147,7 @@ def preload_caller(func):
         else:
             #todo, add fields to model for different call stages and times, like ringing, etc.
             #TODO sent a message to a logger daemon rather than logging this directly, but perhaps increment a variable
+            #TODO no need to use get_or_create for anything but ringing
             if parameters.get('CallStatus') == 'ringing':
                 c = get_or_create(db.session, Call, call_uuid=parameters.get('CallUUID'))
                 c.call_uuid = parameters.get('CallUUID')
@@ -159,10 +160,14 @@ def preload_caller(func):
                 kwargs['parameters']['Call_object_id'] = c.id
             if parameters.get('CallStatus') == 'completed':
                 c = get_or_create(db.session, Call, call_uuid=parameters.get('CallUUID'))
+                kwargs['parameters']['Call_object_id'] = c.id
+            if parameters.get('CallStatus') == 'completed':
+                c = get_or_create(db.session, Call, call_uuid=parameters.get('CallUUID'))
                 c.end_time = datetime.now()                                                                     
                 logger.info("about to commit {}".format(str(c.__dict__)))   
                 db.session.add(c)   
-                db.session.commit()            
+                db.session.commit()       
+        logger.info("Returning Parameters = {}".format(str(kwargs['parameters'])))      
         return func(*args, **kwargs)
     return inner
         
@@ -285,7 +290,7 @@ def confer(parameters, schedule_program_id, action):
 
 #  This function should pretty much only be invoked for unsolicited calls 
 @telephony_server.route('/', methods=['GET', 'POST'])
-@telephony_server.route('/<action>', methods=['GET', 'POST'])
+@telephony_server.route('/<action>/', methods=['GET', 'POST'])
 @preload_caller 
 def root(parameters, action):
     if action == "ringing":
