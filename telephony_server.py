@@ -296,16 +296,16 @@ def confer(parameters, schedule_program_id, action):
 @preload_caller 
 def root(parameters):
     logger.info("Request.path:{}".format(request.path))
-    if request.path == "/ringing":
+    if request.path == "/ringing/":
         logger.info("Ringing call from {0} to {1}".format(parameters.get('From'), parameters.get('To')))
         return "OK"
-    elif request.path == "heartbeat":
+    elif request.path == "/heartbeat/":
         logger.info("Heartbeat for call from {0} to {1}".format(parameters.get('From'), parameters.get('To')))
         return "OK"
-    elif request.path == "hangup":
+    elif request.path == "/hangup/":
         logger.info("Hangup of call from {0} to {1}".format(parameters.get('From'), parameters.get('To')))
         return "OK"
-    elif request.path == "answered":
+    elif request.path == "/answered/":
         #  This is where station daemons are contacted
         r = plivohelper.Response() 
         from_number = parameters.get('From')
