@@ -102,37 +102,6 @@ def page_not_found(error):
     return 'This URL does not exist', 404
 
 
-@telephony_server.route('/ringing/', methods=['GET', 'POST'])
-def ringing():
-    """ringing URL"""
-    # Post params- 'to': ringing number,
-    # request_uuid': request id given at the time of api call
-    logger.info("We got a ringing notification")
-    return "OK"
-
-
-@telephony_server.route('/hangup/', methods=['GET', 'POST'])
-def hangup():
-    """hangup URL"""
-    # Post params- 'request_uuid': request id given at the time of api call,
-    #               'CallUUID': unique id of call, 'reason': reason of hangup
-    logger.info("We got a hangup notification")
-    c = Call()
-
-    return "OK"
-
-
-@telephony_server.route('/heartbeat/', methods=['GET', 'POST'])
-def heartbeat():
-    """Call Heartbeat URL"""
-    logger.info("We got a call heartbeat notification\n")
-
-    if request.method == 'POST':
-        print request.form
-    else:
-        print request.args
-    return "OK"
-
 
 def preload_caller(func):
     @wraps(func)
@@ -157,6 +126,7 @@ def preload_caller(func):
                 logger.info(request.method + ", CallUUID: {0}".format(parameters['CallUUID']))
                 parameters['uuid'] = parameters['CallUUID']
             logger.info("Parameters = {}".format(str(parameters)))  
+            # Here's where we swap the original kwargs for our version
             kwargs['parameters'] = parameters
         except Exception, e:
             logger.error('Failed to get uuid', exc_info=True)
@@ -173,6 +143,7 @@ def preload_caller(func):
             logger.info("about to commit {}".format(str(m.__dict__)))
             db.session.add(m)
             db.session.commit()      
+            kwargs['parameters']['Message_object_id'] = m.id
         else:
             #todo, add fields to model for different call stages and times, like ringing, etc.
             #TODO sent a message to a logger daemon rather than logging this directly, but perhaps increment a variable
@@ -185,6 +156,7 @@ def preload_caller(func):
                 logger.info("about to commit {}".format(str(c.__dict__)))
                 db.session.add(c)
                 db.session.commit()
+                kwargs['parameters']['Call_object_id'] = c.id
             if parameters.get('CallStatus') == 'completed':
                 c = get_or_create(db.session, Call, call_uuid=parameters.get('CallUUID'))
                 c.end_time = datetime.now()                                                                     
@@ -311,7 +283,34 @@ def confer(parameters, schedule_program_id, action):
         logger.info("Could not recognize plivo url variable")
         return "OK"
 
-
+#  This function should pretty much only be invoked for unsolicited calls 
+@telephony_server.route('/', methods=['GET', 'POST'])
+@telephony_server.route('/<action>', methods=['GET', 'POST'])
+@preload_caller 
+def root(parameters, action):
+    if action == "ringing":
+        logger.info("Ringing for scheduled_program {}".format(schedule_program_id))
+        return "OK"
+    elif action == "heartbeat":
+        logger.info("Heartbeat for scheduled_program {}".format(schedule_program_id))
+        return "OK"
+    elif action == "hangup":
+        logger.info("Hangup for scheduled_program {}".format(schedule_program_id))
+        return "OK"
+    elif action == "answered":
+        #  This is where station daemons are contacted
+        r = plivohelper.Response() 
+        from_number = parameters.get('From')
+        p = r.addConference("plivo", muted=False, 
+                            enterSound="beep:2", exitSound="beep:1",
+                            startConferenceOnEnter=True, endConferenceOnExit=False,
+                            waitSound = ANSWERED+'waitmusic/',
+                            timeLimit = 0, hangupOnStar=True)
+        logger.info("RESTXML Response => {}".format(r))
+        return render_template('response_template.xml', response=r)
+    else:
+        logger.info("Could not recognize plivo url variable")
+        return "OK"
 
 def main():
     plugins()
