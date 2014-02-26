@@ -36,9 +36,9 @@ def call(to_number, from_number, gateway, answered=ANSWERED,extra_dial_string=EX
     Make a call, using (gateway, phone_number)
     TODO: actually make the other parameters correspond
     """
-    print "gateway = "+gateway
-    print "phone_numbers = "+to_number
-    print "answered = "+answered
+    logger.info("gateway = "+gateway)
+    logger.info("from {0}, to {1}".format(from_number, to_number))
+    logger.info("answered = "+answered)
     # Define Channel Variable - http://wiki.freeswitch.org/wiki/Channel_Variables
 
     # Create a REST object
@@ -63,10 +63,12 @@ def call(to_number, from_number, gateway, answered=ANSWERED,extra_dial_string=EX
     try:
         result = plivo.call(call_params)
         logger.info(str(result))
+        return [result.get('Success'),result.get('RequestUUID')]
     except Exception, e:
         logger.error('Failed to make utils.call', exc_info=True)
-    return [result.get('Success'),result.get('RequestUUID')]
-
+        pass
+    return "Error"
+    
 #   ONLY CONNECTS FIRST SUCCESSFUL CONNECTION
 def group_call(gateway, phone_numbers, answered): 
     print "gateway = "+gateway
