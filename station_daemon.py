@@ -55,6 +55,18 @@ try:
 except Exception, e:
     logger.error('Failed to open logger', exc_info=True)
 
+#   INITIATE OUTGOING NUMBERS HERE
+#   Hereafter, stations can do a r.rpoplpush('outgoing_unused','outgoing_busy') to get a number
+#   or a r.lrem('outgoing_busy', 0, somenumber) to return it -- SHOULD be atomic :(
+while r.rpop('outgoing_unused') != None:
+    pass
+while r.rpop('outgoing_busy') != None:
+    pass
+for i in range(OUTGOING_NUMBER_BOTTOM, OUTGOING_NUMBER_TOP+1):
+    r.rpush('outgoing_unused', '0'+str(i))
+
+
+
 
 #for realz, create daemon class
 class StationDaemon(Station):
@@ -113,8 +125,7 @@ class StationDaemon(Station):
         print "Worker has stopped processing messages."
 
 #    def load_program():
-#
-#    def load_episode():
+#       load program and pass it its episode id, station object
 #
 #    def queue_episode():
 #
@@ -135,10 +146,10 @@ def test_receivers():
         socket.send("%s %s" % (topic, messagedata))
         time.sleep(1)
 
-# Silly launch of fake daemons
-stations = db.session.query(Station).all()
-daemons = []
-for i in stations:
-    daemons.append(StationDaemon(i.id))
-test_receivers()
+#  Silly launch of fake daemons
+#stations = db.session.query(Station).all()
+#daemons = []
+#for i in stations:
+#    daemons.append(StationDaemon(i.id))
+#test_receivers()
 
