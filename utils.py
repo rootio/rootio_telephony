@@ -3,9 +3,8 @@ import plivohelper
 from time import sleep
 
 
-show_host = '+256784821131'
 ANSWERED = 'http://127.0.0.1:5000/'  
-SOUNDS = 'http://176.58.125.166/~csik/sounds/swahili/'
+SOUNDS_ROOT = 'http://176.58.125.166/~csik/sounds/'
 EXTRA_DIAL_STRING = "bridge_early_media=true,hangup_after_bridge=true"
 
 # Logging
@@ -116,14 +115,8 @@ def group_call(gateway, phone_numbers, answered):
 
 
 #   CONNECTS MULTIPLES
-def bulk_call(gateway, phone_numbers, answered_URL): 
-    print "gateway = "+gateway
-    print "phone_numbers = "+phone_numbers
-    print "answered URL= "+answered_URL
+def bulk_call(to_numbers, from_number, gateway, answered=ANSWERED,extra_dial_string=EXTRA_DIAL_STRING): 
 
-    # Define Channel Variable - http://wiki.freeswitch.org/wiki/Channel_Variables
-    extra_dial_string = "bridge_early_media=true,hangup_after_bridge=true"
-    
     # Create a REST object
     plivo = plivohelper.REST(REST_API_URL, SID, AUTH_TOKEN, API_VERSION)
     
@@ -131,8 +124,8 @@ def bulk_call(gateway, phone_numbers, answered_URL):
     # All parameters for bulk calls shall be separated by a delimeter
     call_params = {
         'Delimiter' : '>', # Delimter for the bulk lst
-        'From': '16176424223', # Caller Id
-        'To' : phone_numbers, # User Numbers to Call separated by delimeter
+        'From': from_number, # Caller Id
+        'To' : to_numbers, # User Numbers to Call separated by delimeter
         'Gateways' : gateway, # Gateway string for each number separated by delimeter
         'GatewayCodecs' : "", # Codec string as needed by FS for each gateway separated by delimeter
         'GatewayTimeouts' : "20>20", # Seconds to timeout in string for each gateway separated by delimeter
@@ -155,10 +148,9 @@ def bulk_call(gateway, phone_numbers, answered_URL):
     #Perform the Call on the Rest API
     try:
         result = plivo.bulk_call(call_params)
-        print result
+        logger.info(str(result))
     except Exception, e:
-        print e
-        raise
+        logger.error('Failed to make utils.bulkcall', exc_info=True)
     return [result.get('Success'),result.get('RequestUUID')]
 
    
