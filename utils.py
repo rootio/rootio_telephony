@@ -2,12 +2,34 @@ from config import *
 import plivohelper
 from time import sleep
 
-from telephony_server import logger
 
 show_host = '+256784821131'
 ANSWERED = 'http://127.0.0.1:5000/'  
 SOUNDS = 'http://176.58.125.166/~csik/sounds/swahili/'
 EXTRA_DIAL_STRING = "bridge_early_media=true,hangup_after_bridge=true"
+
+# Logging
+try:
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+
+    # create a file handler
+    handler = logging.FileHandler('logs/telephony.log', mode='a')
+    handler.setLevel(logging.INFO)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+
+    # create a logging format
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    ch.setFormatter(formatter)
+
+    # add the handlers to the logger
+    logger.addHandler(handler)
+    logger.addHandler(ch)
+except Exception, e:
+    logger.error('Failed to open logger', exc_info=True)
 
 
 def call(to_number, from_number, gateway, answered=ANSWERED,extra_dial_string=EXTRA_DIAL_STRING):
@@ -16,7 +38,7 @@ def call(to_number, from_number, gateway, answered=ANSWERED,extra_dial_string=EX
     TODO: actually make the other parameters correspond
     """
     print "gateway = "+gateway
-    print "phone_numbers = "+phone_number
+    print "phone_numbers = "+to_number
     print "answered = "+answered
     # Define Channel Variable - http://wiki.freeswitch.org/wiki/Channel_Variables
 
@@ -27,8 +49,8 @@ def call(to_number, from_number, gateway, answered=ANSWERED,extra_dial_string=EX
         'To' : to_number, # User Number to Call
         'Gateways' : gateway, # Gateway string to try dialing separated by comma. First in list will be tried first
         'GatewayCodecs' : "", # Codec string as needed by FS for each gateway separated by comma
-        'GatewayTimeouts' : "20",      # Seconds to timeout in string for each gateway separated by comma
-        'GatewayRetries' : "2", # Retry String for Gateways separated by comma, on how many times each gateway should be retried
+        'GatewayTimeouts' : "20,20",      # Seconds to timeout in string for each gateway separated by comma
+        'GatewayRetries' : "2,1", # Retry String for Gateways separated by comma, on how many times each gateway should be retried
         'ExtraDialString' : extra_dial_string,
         'AnswerUrl' : answered+'answered/',
         'HangupUrl' : answered+'hangup/',
