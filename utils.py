@@ -63,7 +63,7 @@ def call(to_number, from_number, gateway, answered=ANSWERED,extra_dial_string=EX
     try:
         result = plivo.call(call_params)
         logger.info(str(result))
-        return [result.get('Success'),result.get('RequestUUID')]
+        return result
     except Exception, e:
         logger.error('Failed to make utils.call', exc_info=True)
         pass
@@ -151,8 +151,8 @@ def bulk_call(to_numbers, from_number, gateway, answered=ANSWERED,extra_dial_str
     try:
         result = plivo.bulk_call(call_params)
         logger.info(str(result))
+        return [result.get('Success'),result.get('RequestUUID')]
     except Exception, e:
         logger.error('Failed to make utils.bulkcall', exc_info=True)
-    return [result.get('Success'),result.get('RequestUUID')]
-
-   
+        pass
+    return "Error"   
