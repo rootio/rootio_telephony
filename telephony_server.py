@@ -69,6 +69,7 @@ admin.add_view(ModelView(Location, db.session))
 admin.add_view(ModelView(Station, db.session))
 admin.add_view(ModelView(Program, db.session))
 admin.add_view(ModelView(Episode, db.session))
+admin.add_view(ModelView(Role, db.session))
 
 
 def get_or_create(session, model, **kwargs):
@@ -272,6 +273,7 @@ def confer(parameters, schedule_program_id, action):
         logger.info("Heartbeat for scheduled_program {}".format(schedule_program_id))
         return "OK"
     elif action == "hangup":
+        # THIS IS WHERE NUMBER IS TRANSFERRED FROM outgoing_busy TO outgoing_unused
         logger.info("Hangup for scheduled_program {}".format(schedule_program_id))
         return "OK"
     elif action == "answered":
@@ -306,24 +308,32 @@ def root(parameters):
         return "OK"
     elif request.path == "/answered/":
         if parameters.get('CallStatus') == "ringing":
-            logger.info("Ringing call from {0} to {1}".format(parameters.get('From'), parameters.get('To')))
-            logger.info(str(parameters.get('From') == '16176424223'))
-            logger.info(str(parameters.get('From')))
-            logger.info('16176424223')
-            if parameters.get('From') == '16176424223':
+            #Check to see if incoming call is from a station's cloud number
+            phone_id = db.session.query(PhoneNumber).filter(PhoneNumber.raw_number==parameters.get('From')).one().id
+            station = db.session.query(Station).filter(Station.cloud_phone_id==phone_id).first()
+            if station:
+                logger.info("Received call from cloud number:")
+                logger.info(station.name, station.cloud_phone.raw_number)
                 logger.info("Choosing to not answer")
                 time.sleep(5)
                 return "OK"
+                # TODO: ADD broadcast to station
+            else:
+                logger.info("Received call from non-cloud number")
+            logger.info("Ringing call from {0} to {1}".format(parameters.get('From'), parameters.get('To')))
+
+        #  Not ringing means it is answered    
+        else:    
         #  This is where station daemons are contacted
-        r = plivohelper.Response() 
-        from_number = parameters.get('From')
-        p = r.addConference("plivo", muted=False, 
-                            enterSound="beep:2", exitSound="beep:1",
-                            startConferenceOnEnter=True, endConferenceOnExit=False,
-                            waitSound = ANSWERED+'waitmusic/',
-                            timeLimit = 0, hangupOnStar=True)
-        logger.info("RESTXML Response => {}".format(r))
-        return render_template('response_template.xml', response=r)
+            r = plivohelper.Response() 
+            from_number = parameters.get('From')
+            p = r.addConference("plivo", muted=False, 
+                                enterSound="beep:2", exitSound="beep:1",
+                                startConferenceOnEnter=True, endConferenceOnExit=False,
+                                waitSound = ANSWERED+'waitmusic/',
+                                timeLimit = 0, hangupOnStar=True)
+            logger.info("RESTXML Response => {}".format(r))
+            return render_template('response_template.xml', response=r)
     else:
         logger.info("Could not recognize plivo url variable")
         return "OK"
@@ -339,10 +349,9 @@ def plugins():
     manager.collectPlugins()
 
     # Loop round the plugins and print their names.
-    for plugin in manager.getAllPlugins():
-        plugin.plugin_object.print_name()
-    p = manager.getAllPlugins()[0]
-    p.plugin_object.activate()
+    for p in manager.getAllPlugins():
+        p.plugin_object.print_name()
+        p.plugin_object.activate()
 
 
 if __name__ == '__main__':
