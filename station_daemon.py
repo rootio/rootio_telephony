@@ -15,6 +15,7 @@ import time
 import sys
 from multiprocessing import Process
 import random
+import redis
 
 from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
@@ -55,60 +56,79 @@ try:
 except Exception, e:
     logger.error('Failed to open logger', exc_info=True)
 
-#   INITIATE OUTGOING NUMBERS HERE
-#   Hereafter, stations can do a r.rpoplpush('outgoing_unused','outgoing_busy') to get a number
-#   or a r.lrem('outgoing_busy', 0, somenumber) to return it -- SHOULD be atomic :(
-while r.rpop('outgoing_unused') != None:
-    pass
-while r.rpop('outgoing_busy') != None:
-    pass
-for i in range(OUTGOING_NUMBER_BOTTOM, OUTGOING_NUMBER_TOP+1):
-    r.rpush('outgoing_unused', '0'+str(i))
 
 
 
 
 #for realz, create daemon class
 class StationDaemon(Station):
-    def __init__(self, id):
+    def __init__(self, station_id):
         logger.info("Hello World")
         self.gateway = 'sofia/gateway/utl'
         self.caller_queue = []
         self.active_workers = []
 
         try:
-            original = db.session.query(Station).filter(Station.id == id).one()
+            original = db.session.query(Station).filter(Station.id == station_id).one()
             print original
         except Exception, e:
             logger.error('Could not load one unique station', exc_info=True)
-            print 'Could not load one unique station'
         #  copy database item to daemon item -- tried to automate this but couldn't make keys
         self.about = original.about
         self.name = original.name
         self.network_id = original.network_id
         self.cloud_phone_id = original.cloud_phone_id
+        self.cloud_phone = original.cloud_phone
         self.frequency = original.frequency
         self.transmitter_phone_id = original.transmitter_phone_id
         self.api_key = original.api_key
         self.location_id = original.location_id
         self.id = original.id
         self.owner_id = original.owner_id
+        self.program = None
+
+        try:
+            self.r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        except Exception, e:
+            logger.error('Could not open redis connection', exc_info=True)
+        #   INITIATE OUTGOING NUMBERS HERE
+        #   Hereafter, stations can do a r.rpoplpush('outgoing_unused','outgoing_busy') to get a number
+        #   or a r.lrem('outgoing_busy', 0, somenumber) to return it -- SHOULD be atomic :(
+        while self.r.rpop('outgoing_unused') != None:
+            pass
+        while self.r.rpop('outgoing_busy') != None:
+            pass
+        for i in range(OUTGOING_NUMBER_BOTTOM, OUTGOING_NUMBER_TOP+1):
+            self.r.rpush('outgoing_unused', '0'+str(i))
+
+        #   INITIATE IS_MASTER KEYS
+        for k in self.r.keys('is_master_*'):
+            self.r.set(k,'none')
 
         #  start listeners
         self.start_listeners()
 
     #  start listeners - so far just a test section
+    #https://learning-0mq-with-pyzmq.readthedocs.org/en/latest/pyzmq/multisocket/tornadoeventloop.html
     def start_listeners(self):
-        sms_listener = Process(target=self.listener, args=(str('sms.station.'+str(self.id)), self.process_message))
-        sms_listener.start()
-        self.active_workers.append(sms_listener)
-        call_listener = Process(target=self.listener, args=(str('call.station.'+str(self.id)), self.process_message))
+        call_listener = Process(target=self.listener, args=(str('station.'+str(self.id)+'.call'), self.process_message))
         call_listener.start()
         self.active_workers.append(call_listener)
+        program_listener = Process(target=self.listener, args=(str('station.'+str(self.id)+'.program'), self.process_program))
+        program_listener.start()
+        self.active_workers.append(program_listener)
 
     #  generic process, replace with sms, call, load program, etc.
     def process_message(self, msg):
-        print "Processing ... %s" % msg
+        print "Processing: %s" % msg
+        #m = msg[0].split(' ',1)[1]
+        #print pickle.loads(m)
+
+        #  generic process, replace with sms, call, load program, etc.
+    def process_program(self, msg):
+        print "Processing Program Change: %s" % msg
+        import news_report
+        self.program = news_report.News(3, self)
         #m = msg[0].split(' ',1)[1]
         #print pickle.loads(m)
 
@@ -139,9 +159,9 @@ def test_receivers():
     socket.bind("tcp://*:%s" % port)
 
     while True:
-        message_topics = ['sms.station.7', 'call.station.7','sms.station.5', 'call.station.5','sms.station.6', 'call.station.6']
+        message_topics = ['station.7.program', 'station.7.call','station.7.program', 'station.7.program','sms.station.6', 'call.station.6']
         topic = message_topics[random.randrange(0, len(message_topics))]
-        messagedata = random.randrange(1, 215) - 80
+        messagedata = "this is a test message"
         print "%s %s" % (topic, str(messagedata))
         socket.send("%s %s" % (topic, messagedata))
         time.sleep(1)
