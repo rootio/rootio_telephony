@@ -6,10 +6,10 @@ Sketch of news show.
 At most basic, the show consists of making outgoing calls and playing a news report.
 
 Options:
-	Have news report read live from a location
-	Have a live reporter reading texts at the end
-	Have a regional segment following the national
-	Advertisements in-line
+    Have news report read live from a location
+    Have a live reporter reading texts at the end
+    Have a regional segment following the national
+    Advertisements in-line
 
 """
 import zmq
@@ -69,90 +69,114 @@ except Exception, e:
 #r.lrem('outgoing_busy', 0, somenumber) #  remove all instances for somenumber
 #r.rpush('outgoing_unused', somenumber) #  add them back to the queue
 
+r = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 class News(StateMachine):
-	initial_state = 'setup'
+    initial_state = 'setup'
 
-	def __init__(self, episode_id, station):
-		self.caller_list = "{0}-{1}".format('caller_list',episode_id)
-		self.sound_url = "{}{}{}{}".format(TELEPHONY_SERVER_IP,'/~csik/sounds/programs/',episode_id,'/current.mp3')
-		self.conference = "news_report_conference-{}".format(episode_id)
-		self.station = station
-		self.episode_id = episode_id
-		super(News, self).__init__()
+    def __init__(self, episode_id, station):
+        self.caller_list = "caller_list-{0}".format(episode_id)
+        self.sound_url = "{}{}{}{}".format(TELEPHONY_SERVER_IP,'/~csik/sounds/programs/',episode_id,'/current.mp3')
+        self.conference = "news_report_conference-{}".format(episode_id)
+        self.station = station
+        self.episode_id = episode_id
+        self.is_master = False
+        super(News, self).__init__()
+
+    def setup(self):
+        logger.info("News_Report: In setup")
+
+        #  Check if this instance should be master
+        if r.get('is_master_'+str(self.episode_id))=='none':
+            r.set('is_master_'+str(self.episode_id),self.station.id)
+            self.is_master = True
+
+        #check soundfile
+        import requests
+        response = requests.head(self.sound_url)
+        if response.status_code != 200:
+            logger.error('No sound file available at url:'.format(self.sound_url))
+
+        #allocate outgoing line
+        logger.info(str(r.llen('outgoing_unused'))+" free phone lines available")
+        number = r.rpoplpush('outgoing_unused','outgoing_busy')
+
+        #place calls
+        try:
+            call_result = call(   to_number=self.station.cloud_phone.raw_number, 
+                                  from_number=number, 
+                                  gateway='sofia/gateway/utl/', 
+                                  answered='http://127.0.0.1:5000/confer/'+str(self.episode_id)+'/',
+                                  extra_dial_string="bridge_early_media=true,hangup_after_bridge=true,origination_caller_id_name=rootio,origination_caller_id_number="+number,
+                                )
+        except Exception, e:
+            logger.error('Failed to place call call', exc_info=True)
+
+        if call_result !='Error':
+            if call_result.get('Success') == True:
+                self.RequestUUID = call_result.get('RequestUUID')
+        logger.info(str(call_result))
         
+        #count successful calls, plan otherwise
 
-	def setup(self):
-		logger.info("News_Report: In setup")
+        #launch show-wide listeners
 
-		#  Start caller/messager list
-		r = redis.StrictRedis(host='localhost', port=6379, db=0)
-		r.set(self.caller_list,[])
-		# from now on get list as 
-		#numbers = ast.literal_eval(r.get(self.caller_list))
-		#numbers.append(incoming)	
-		#r.set(self.caller_list,numbers)
-
-		#check soundfile
-		import requests
-		response = requests.head(self.sound_url)
-		if response.status_code != 200:
-			logger.error('No sound file available at url:'.format(self.sound_url))
-
-		#allocate outgoing line
-		logger.info(str(r.llen('outgoing_unused'))+" free phone lines available")
-		number = r.rpoplpush('outgoing_unused','outgoing_busy')
-
-		#place calls
-		call_result = call(   to_number=self.station.cloud_phone.raw_number, 
-        					  from_number=number, 
-        					  gateway='sofia/gateway/utl/', 
-        					  answered='http://127.0.0.1:5000/'+'/confer/'+str(self.episode_id)+'/',
-        					  extra_dial_string="bridge_early_media=true,hangup_after_bridge=true,origination_caller_id_name=rootio,origination_caller_id_number="+number,
-    						)
-
-		logger.info(str(call_result))
-		#count successful calls, plan otherwise
-		#launch show-wide listeners -- or does station do that?
+    def intro(self):
+        logger.info("News_Report: In intro")
+        #play music
+        if self.is_master == True:
+            self.conference
+            #wait until intro music is finished
 
 
-	def intro(self):
-		logger.info("News_Report: In intro")
-		#wait until intro music is finished
-		#play sound to conference
-		#check progress of sound file
-
-	def report(self):
-		logger.info("News_Report: In report")
-		#play report sound
-		#check on calls?
-		#
-	def outro(self):
-		logger.info("News_Report: In outro")
-		#hang up calls 
-		#log
-		#play outgoing music
-
-	# This among all others should be "blocking", i.e. how do we assure it has 
-	# executed before trying another show?
-	def teardown(self):
-		logger.info("News_Report: In teardown")
-		#hang up calls if they have not been humg up
-		#clear conference
+    def report(self):
+        logger.info("News_Report: In report")
+        #play report sound
+        if self.is_master == True:
+            self.conference
+        #check on calls?
+        #
 
 
-	#  Set up states
-	state('setup',enter=setup)
-	state('intro',enter=intro)
-	state('report',enter=report)
-	state('outro',enter=outro)
-	state('teardown',enter=teardown)
-	#  Set up transitions, note they expect serial progression except for teardown
-	transition(from_='setup', event='go_intro', to='intro')
-	transition(from_='intro', event='go_report', to='report')
-	transition(from_='report', event='go_outro', to='outro')
-	transition(from_=['outro','report','intro','setup'], event='go_teardown', to='teardown')
-	
+    def outro(self):
+        logger.info("News_Report: In outro")
+        
+        #log
+        #play outgoing music
+
+    # This among all others should be "blocking", i.e. how do we assure it has 
+    # executed before trying another show?
+
+
+    def teardown(self):
+        logger.info("News_Report: In teardown")
+        #hang up calls if they have not been humg up
+        plivo = plivohelper.REST(REST_API_URL, SID, AUTH_TOKEN, API_VERSION)
+        hangup_call_params = {'RequestUUID' : self.RequestUUID} # CallUUID for Hangup
+        try:
+            result = plivo.hangup_call(hangup_call_params)
+            logger.info(str(result))
+        except Exception, e:
+            logger.error('Failed to hangup in new_report', exc_info=True)
+        #clear conference
+
+        #clear is_master semaphore
+        if self.is_master == True:
+            r.set('is_master_'+str(self.episode_id),'none')
+            
+
+    #  Set up states
+    state('setup',enter=setup)
+    state('intro',enter=intro)
+    state('report',enter=report)
+    state('outro',enter=outro)
+    state('teardown',enter=teardown)
+    #  Set up transitions, note they expect serial progression except for teardown
+    transition(from_='setup', event='go_intro', to='intro')
+    transition(from_='intro', event='go_report', to='report')
+    transition(from_='report', event='go_outro', to='outro')
+    transition(from_=['outro','report','intro','setup'], event='go_teardown', to='teardown')
+    
 
 
 
