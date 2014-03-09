@@ -102,8 +102,9 @@ class News(StateMachine):
         number = r.rpoplpush('outgoing_unused','outgoing_busy')
 
         #place calls
+        GATEWAY_PREFIX='951'
         try:
-            call_result = call(   to_number=self.station.transmitter_phone.raw_number, 
+            call_result = call(   to_number=GATEWAY_PREFIX+self.station.transmitter_phone.raw_number, 
                                   from_number=number, 
                                   gateway='sofia/gateway/utl/', 
                                   answered='http://127.0.0.1:5000/confer/'+str(self.episode_id)+'/',
