@@ -106,7 +106,7 @@ class StationDaemon(Station):
             self.r.set(k,'none')
 
         #  start listeners
-        self.start_listeners()
+        #self.start_listeners()
 
     #  start listeners - so far just a test section
     #https://learning-0mq-with-pyzmq.readthedocs.org/en/latest/pyzmq/multisocket/tornadoeventloop.html
