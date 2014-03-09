@@ -81,6 +81,7 @@ class StationDaemon(Station):
         self.cloud_phone = original.cloud_phone
         self.frequency = original.frequency
         self.transmitter_phone_id = original.transmitter_phone_id
+        self.transmitter_phone = original.transmitter_phone
         self.api_key = original.api_key
         self.location_id = original.location_id
         self.id = original.id
