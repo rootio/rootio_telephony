@@ -103,7 +103,7 @@ class News(StateMachine):
 
         #place calls
         try:
-            call_result = call(   to_number=self.station.cloud_phone.raw_number, 
+            call_result = call(   to_number=self.station.transmitter_phone.raw_number, 
                                   from_number=number, 
                                   gateway='sofia/gateway/utl/', 
                                   answered='http://127.0.0.1:5000/confer/'+str(self.episode_id)+'/',
