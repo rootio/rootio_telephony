@@ -90,6 +90,7 @@ class News(StateMachine):
         if r.get('is_master_'+str(self.episode_id))=='none':
             r.set('is_master_'+str(self.episode_id),self.station.id)
             self.is_master = True
+            logger.info("{} is master for news report".format(str(self))
 
         #check soundfile
         import requests
@@ -99,16 +100,16 @@ class News(StateMachine):
 
         #allocate outgoing line
         logger.info(str(r.llen('outgoing_unused'))+" free phone lines available")
-        number = r.rpoplpush('outgoing_unused','outgoing_busy')
+        fnumber = str(r.rpoplpush('outgoing_unused','outgoing_busy'))
 
         #place calls
-        GATEWAY_PREFIX='951'
+        GATEWAY_PREFIX='951'  # This is a hack -- make this part of station or similar db field
         try:
             call_result = call(   to_number=GATEWAY_PREFIX+self.station.transmitter_phone.raw_number, 
-                                  from_number=number, 
+                                  from_number='0'+fnumber, 
                                   gateway='sofia/gateway/utl/', 
                                   answered='http://127.0.0.1:5000/confer/'+str(self.episode_id)+'/',
-                                  extra_dial_string="bridge_early_media=true,hangup_after_bridge=true,origination_caller_id_name=rootio,origination_caller_id_number="+number,
+                                  extra_dial_string="bridge_early_media=true,hangup_after_bridge=true,origination_caller_id_name=rootio,caller_name=rootio,origination_caller_id_number=0"+fnumber,
                                 )
         except Exception, e:
             logger.error('Failed to place call call', exc_info=True)
@@ -126,12 +127,12 @@ class News(StateMachine):
         logger.info("News_Report: In intro")
         #play music
         if self.is_master == True:
-            self.conference
+            logger.info("In INTRO to news report {}".format(self.conference))
             #wait until intro music is finished
 
 
     def report(self):
-        logger.info("News_Report: In report")
+        logger.info("In REPORT of news report {}".format(self.conference))
         #play report sound
         if self.is_master == True:
             self.conference
@@ -140,7 +141,7 @@ class News(StateMachine):
 
 
     def outro(self):
-        logger.info("News_Report: In outro")
+        logger.info("In OUTRO to news report {}".format(self.conference))
         
         #log
         #play outgoing music
@@ -150,8 +151,8 @@ class News(StateMachine):
 
 
     def teardown(self):
-        logger.info("News_Report: In teardown")
-        #hang up calls if they have not been humg up
+        logger.info("In TEARDOWN of news report {}".format(self.conference))
+        #hang up calls if they have not been hung up
         plivo = plivohelper.REST(REST_API_URL, SID, AUTH_TOKEN, API_VERSION)
         hangup_call_params = {'RequestUUID' : self.RequestUUID} # CallUUID for Hangup
         try:
