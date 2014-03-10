@@ -106,7 +106,7 @@ class News(StateMachine):
         GATEWAY_PREFIX='951'  # This is a hack -- make this part of station or similar db field
         try:
             call_result = call(   to_number=GATEWAY_PREFIX+self.station.transmitter_phone.raw_number, 
-                                  from_number='0'+fnumber, 
+                                  from_number=fnumber, 
                                   gateway='sofia/gateway/utl/', 
                                   answered='http://127.0.0.1:5000/confer/'+str(self.episode_id)+'/',
                                   extra_dial_string="bridge_early_media=true,hangup_after_bridge=true,origination_caller_id_name=rootio,caller_name=rootio,origination_caller_id_number=0"+fnumber,
