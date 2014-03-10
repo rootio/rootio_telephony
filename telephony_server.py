@@ -206,11 +206,10 @@ def waitmusic():
         logger.info(str(request.form.items()))
     else:
         logger.info(str(request.args.items()))
+    
     r = plivohelper.Response()     
-    #r.addSpeak('Your mama is so fat.')
-    #r.addSpeak("Your father was a hampster and your mother smelt of elderberries.")
-    r.addPlay("/usr/local/freeswitch/sounds/en/us/callie/ivr/8000/ivr-welcome.wav")
-    r.addPlay("/usr/local/freeswitch/sounds/music/8000/suite-espanola-op-47-leyenda.wav")
+    r.addPlay("/usr/local/freeswitch/sounds/en/us/callie/ivr/16000/ivr-welcome.wav")
+    r.addPlay("/usr/local/freeswitch/sounds/music/16000/suite-espanola-op-47-leyenda.wav")
     logger.info("RESTXML Response => {}".format(r))
     return render_template('response_template.xml', response=r)    
 
@@ -280,11 +279,16 @@ def confer(parameters, schedule_program_id, action):
         #  This is where station daemons are contacted
         r = plivohelper.Response() 
         from_number = parameters.get('From')
-        p = r.addConference("plivo", muted=False, 
-                            enterSound="beep:2", exitSound="beep:1",
-                            startConferenceOnEnter=True, endConferenceOnExit=False,
+        p = r.addConference("plivo", 
+                            muted=False, 
+                            enterSound="beep:2", 
+                            exitSound="beep:1",
+                            startConferenceOnEnter=True, 
+                            endConferenceOnExit=False,
                             waitSound = ANSWERED+'waitmusic/',
-                            timeLimit = 0, hangupOnStar=True)
+                            timeLimit = 0, 
+                            hangupOnStar=True,
+                            )
         logger.info("RESTXML Response => {}".format(r))
         return render_template('response_template.xml', response=r)
     else:
