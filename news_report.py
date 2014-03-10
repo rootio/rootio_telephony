@@ -109,7 +109,7 @@ class News(StateMachine):
                                   from_number=fnumber, 
                                   gateway='sofia/gateway/utl/', 
                                   answered='http://127.0.0.1:5000/confer/'+str(self.episode_id)+'/',
-                                  extra_dial_string="bridge_early_media=true,hangup_after_bridge=true,origination_caller_id_name=rootio,caller_name=rootio,origination_caller_id_number=0"+fnumber,
+                                  extra_dial_string="bridge_early_media=true,hangup_after_bridge=true,origination_caller_id_name=rootio,caller_name=rootio,origination_caller_id_number="+fnumber,
                                 )
         except Exception, e:
             logger.error('Failed to place call call', exc_info=True)
