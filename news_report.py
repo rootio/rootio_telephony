@@ -90,7 +90,7 @@ class News(StateMachine):
         if r.get('is_master_'+str(self.episode_id))=='none':
             r.set('is_master_'+str(self.episode_id),self.station.id)
             self.is_master = True
-            logger.info("{} is master for news report".format(str(self))
+            logger.info("{} is master for news report".format(str(self)))
 
         #check soundfile
         import requests
