@@ -83,6 +83,7 @@ class News(StateMachine):
         self.station = station
         self.episode_id = episode_id
         self.is_master = False
+        self.fnumber = None
         super(News, self).__init__()
 
     def setup(self):
@@ -103,6 +104,7 @@ class News(StateMachine):
         #allocate outgoing line
         logger.info(str(r.llen('outgoing_unused'))+" free phone lines available")
         fnumber = str(r.rpoplpush('outgoing_unused','outgoing_busy'))
+        self.fnumber = fnumber
 
         #place calls
         GATEWAY_PREFIX='951'  # This is a hack -- make this part of station or similar db field
@@ -167,6 +169,8 @@ class News(StateMachine):
         #clear is_master semaphore
         if self.is_master == True:
             r.set('is_master_'+str(self.episode_id),'none')
+        r.lrem('outgoing_busy', 0, self.fnumber) #  remove all instances for somenumber
+        r.rpush('outgoing_unused', self.fnumber) #  add them back to the queue
             
 
     #  Set up states
