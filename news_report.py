@@ -141,9 +141,16 @@ class News(StateMachine):
         #play report sound
         if self.is_master == True:
             self.conference
-        #check on calls?
-        #
-
+            # Create a REST object
+            plivo = plivohelper.REST(REST_API_URL, SID, AUTH_TOKEN, API_VERSION)
+            call_params = {'ConferenceName':self.conference, 'MemberID':'all', 'FilePath':'/home/csik/public_html/sounds/programs/3/current.mp3'}
+            try:
+                print plivo.conference_play(call_params)
+            except Exception, e:
+                print e    
+                    #check on calls?
+                    #
+            
 
     def outro(self):
         logger.info("In OUTRO to news report {}".format(self.conference))

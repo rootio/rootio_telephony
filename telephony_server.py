@@ -210,7 +210,8 @@ def waitmusic():
     r = plivohelper.Response()     
     r.addPlay("/home/csik/public_html/sounds/programs/3/current.mp3")
     logger.info("RESTXML Response => {}".format(r))
-    return render_template('response_template.xml', response=r)    
+    #return render_template('response_template.xml', response=r)    
+    return "OK"
 
 
 @telephony_server.route('/hostwait/', methods=['GET', 'POST'])
