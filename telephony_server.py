@@ -208,8 +208,7 @@ def waitmusic():
         logger.info(str(request.args.items()))
     
     r = plivohelper.Response()     
-    r.addPlay("/usr/local/freeswitch/sounds/en/us/callie/ivr/16000/ivr-welcome.wav")
-    r.addPlay("/usr/local/freeswitch/sounds/music/16000/suite-espanola-op-47-leyenda.wav")
+    r.addPlay("/home/csik/public_html/sounds/programs/3/current.mp3")
     logger.info("RESTXML Response => {}".format(r))
     return render_template('response_template.xml', response=r)    
 
