@@ -90,7 +90,7 @@ class News(StateMachine):
         logger.info("News_Report: In setup")
 
         #  Check if this instance should be master
-        if r.get('is_master_'+str(self.episode_id)):
+        if not r.get('is_master_'+str(self.episode_id)):
             r.set('is_master_'+str(self.episode_id),self.station.id)
             self.is_master = True
             logger.info("{} is master for news report".format(str(self)))
@@ -143,7 +143,7 @@ class News(StateMachine):
             self.conference
             # Create a REST object
             plivo = plivohelper.REST(REST_API_URL, SID, AUTH_TOKEN, API_VERSION)
-            call_params = {'ConferenceName':self.conference, 'MemberID':'all', 'FilePath':'/home/csik/public_html/sounds/programs/3/current.mp3'}
+            call_params = {'ConferenceName':'plivo', 'MemberID':'all', 'FilePath':'/home/csik/public_html/sounds/programs/3/current.mp3'}
             try:
                 print plivo.conference_play(call_params)
             except Exception, e:
