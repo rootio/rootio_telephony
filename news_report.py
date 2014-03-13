@@ -76,7 +76,7 @@ r = redis.StrictRedis(host='localhost', port=6379, db=0)
 class News(StateMachine):
     initial_state = 'setup'
 
-    def __init__(self, episode_id, station, show_uuid):
+    def __init__(self, episode_id, station):
         self.caller_list = "caller_list-{0}".format(episode_id)
         self.sound_url = "{}{}{}{}".format(TELEPHONY_SERVER_IP,'/~csik/sounds/programs/',episode_id,'/current.mp3')
         self.conference = "news_report_conference-{}".format(episode_id)
