@@ -76,7 +76,7 @@ r = redis.StrictRedis(host='localhost', port=6379, db=0)
 class News(StateMachine):
     initial_state = 'setup'
 
-    def __init__(self, episode_id, station):
+    def __init__(self, episode_id, station, show_uuid):
         self.caller_list = "caller_list-{0}".format(episode_id)
         self.sound_url = "{}{}{}{}".format(TELEPHONY_SERVER_IP,'/~csik/sounds/programs/',episode_id,'/current.mp3')
         self.conference = "news_report_conference-{}".format(episode_id)
@@ -105,6 +105,7 @@ class News(StateMachine):
         logger.info(str(r.llen('outgoing_unused'))+" free phone lines available")
         fnumber = str(r.rpoplpush('outgoing_unused','outgoing_busy'))
         self.fnumber = fnumber
+        logger.info("Allocating line {}".format(fnumber))
 
         #place calls
         GATEWAY_PREFIX='951'  # This is a hack -- make this part of station or similar db field
