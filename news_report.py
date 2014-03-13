@@ -1,4 +1,6 @@
 from fluidity import StateMachine, state, transition
+import plivohelper
+
 
 """
 Sketch of news show.  
