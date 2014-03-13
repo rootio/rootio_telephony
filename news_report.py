@@ -90,9 +90,9 @@ class News(StateMachine):
         logger.info("News_Report: In setup")
 
         #  Check if this instance should be master
-        if r.get('is_master_'+str(s0.program.episode_id)) == 'none':
-            r.set('is_master_'+str(s0.program.episode_id),s0.program.station.id)
-            s0.program.is_master = True
+        if r.get('is_master_'+str(self.episode_id)) == 'none':
+            r.set('is_master_'+str(self.episode_id),self.station.id)
+            self.is_master = True
             logger.info("{} is master for news report".format(str(self)))
 
         #check soundfile
