@@ -7,8 +7,8 @@ class Music_Show(Program):
         print "This is a music show"
     def activate(self):
         super(Music_Show, self).activate()
-        print "I've been activated!"
+        print "I've music been activated!"
     def deactivate(self):
         super(Music_Show, self).deactivate()
-        print "I've been deactivated!"
+        print "I've music been deactivated!"
 
