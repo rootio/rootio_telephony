@@ -25,11 +25,13 @@ import logging
 
 from config import *
 
+
 telephony_server = Flask("ResponseServer")
 telephony_server.debug = True
 
 admin = Admin(telephony_server)
 
+telephony_server.config['SECRET_KEY'] = SECRET_KEY
 
 # Logging
 try:
@@ -70,7 +72,7 @@ admin.add_view(ModelView(Station, db.session))
 admin.add_view(ModelView(Program, db.session))
 admin.add_view(ModelView(Episode, db.session))
 admin.add_view(ModelView(Role, db.session))
-
+admin.add_view(ModelView(Gateway, db.session))
 
 def get_or_create(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()

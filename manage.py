@@ -17,6 +17,7 @@ from flask.ext.sqlalchemy import SQLAlchemy
 db = SQLAlchemy(telephony_server)
 from rootio.telephony.models import *
 from rootio.radio.models import *
+from rootio.user.models import *
 
 @manager.command
 def hello():
