@@ -12,5 +12,5 @@ AUTH_TOKEN = 'Csikszentmihalyi'
 """
 DATABASE
 """
-SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:NLPog1986@localhost'
+SQLALCHEMY_DATABASE_URI = 'postgresql://postgres@localhost'
 GOIP_PASSWORD = 'SOMETHING'
