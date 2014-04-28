@@ -28,7 +28,7 @@ telephony_server.debug = True
 from rootio.telephony.models import *
 from rootio.radio.models import *
 
-telephony_server.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:NLPog1986@localhost'
+telephony_server.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres@localhost'
 db = SQLAlchemy(telephony_server)
 
 # logging
