@@ -27,6 +27,10 @@ import os,sys
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 from yapsy.IPlugin import IPlugin
 
+########################################################################
+#                   Logging
+########################################################################
+
 import logging
 
 try:
@@ -35,7 +39,7 @@ try:
     logger.setLevel(logging.INFO)
 
     # create a file handler
-    handler = logging.FileHandler('logs/telephony.log', mode='a')
+    handler = logging.FileHandler('logs/program.log', mode='a')
     handler.setLevel(logging.INFO)
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
@@ -51,25 +55,9 @@ try:
 except Exception, e:
     logger.error('Failed to open logger', exc_info=True)
 
-
-#  code for two-way clienting
-#SUB_PORT = MESSAGE_QUEUE_PORT  #  This has to be sent in the initial message
-#context = zmq.Context()
-#socket = context.socket(zmq.PAIR)
-#socket.connect("tcp://localhost:%s" % port)
-#socket.send(response)
-
-# Use redis lists for atomic access to a list of available numbers
-# redis lists
-#r.rpush('ttt','666')
-#r.rpush('ttt','77')
-#r.lrange('ttt',0,-1)
-#new_number = r.brpoplpush('ttt','rrr')
-#r.llen('outgoing_unused')
-
-#somenumber = '0417744888'
-#r.lrem('outgoing_busy', 0, somenumber) #  remove all instances for somenumber
-#r.rpush('outgoing_unused', somenumber) #  add them back to the queue
+########################################################################
+#                   Logging
+########################################################################
 
 r = redis.StrictRedis(host='localhost', port=6379, db=0)
 
@@ -109,12 +97,15 @@ class News(StateMachine):
 
         #place calls
         GATEWAY_PREFIX='951'  # This is a hack -- make this part of station or similar db field
+        top_gateway = self.station.outgoing_gateways[0]
+
         try:
-            call_result = call(   to_number=GATEWAY_PREFIX+self.station.transmitter_phone.raw_number, 
+            call_result = call(   to_number=top_gateway.gateway_prefix+self.station.transmitter_phone.raw_number, 
                                   from_number=fnumber, 
-                                  gateway='sofia/gateway/utl/', 
+                                  gateway=top_gateway.sofia_string, 
                                   answered='http://127.0.0.1:5000/confer/'+str(self.episode_id)+'/',
-                                  extra_dial_string="bridge_early_media=true,hangup_after_bridge=true,origination_caller_id_name=rootio,caller_name=rootio,origination_caller_id_number="+fnumber,
+                                  #extra_dial_string="bridge_early_media=true,hangup_after_bridge=true,origination_caller_id_name=rootio,caller_name=rootio,origination_caller_id_number="+fnumber,
+                                  extra_dial_string=top_gateway.extra_string,
                                 )
         except Exception, e:
             logger.error('Failed to place call call', exc_info=True)

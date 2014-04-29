@@ -28,7 +28,7 @@ telephony_server.debug = True
 from rootio.telephony.models import *
 from rootio.radio.models import *
 
-telephony_server.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres@localhost'
+telephony_server.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres@localhost/rootio'
 db = SQLAlchemy(telephony_server)
 
 # logging
@@ -87,6 +87,8 @@ class StationDaemon(Station):
         self.id = original.id
         self.owner_id = original.owner_id
         self.program = None
+        self.outgoing_gateways = original.outgoing_gateways
+        self.incoming_gateways = original.incoming_gateways
 
         try:
             self.r = redis.StrictRedis(host='localhost', port=6379, db=0)
@@ -168,9 +170,9 @@ def test_receivers():
         time.sleep(1)
 
 #  Silly launch of fake daemons
-#stations = db.session.query(Station).all()
-#daemons = []
-#for i in stations:
-#    daemons.append(StationDaemon(i.id))
-#test_receivers()
+stations = db.session.query(Station).all()
+daemons = []
+for i in stations:
+    daemons.append(StationDaemon(i.id))
+test_receivers()
 
