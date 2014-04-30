@@ -179,7 +179,7 @@ class News(StateMachine):
         #return numbers to stack
         top_gateway = self.station.outgoing_gateways[0]
         if top_gateway>0:
-            logger.info("Returning phone numbers to stack."
+            logger.info("Returning phone numbers to stack.")
             r.lrem('outgoing_busy', 0, self.fnumber) #  remove all instances for somenumber
             r.rpush('outgoing_unused', self.fnumber) #  add them back to the queue
             
