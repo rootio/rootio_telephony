@@ -89,16 +89,22 @@ class News(StateMachine):
         if response.status_code != 200:
             logger.error('No sound file available at url:'.format(self.sound_url))
 
-        #allocate outgoing line
-        logger.info(str(r.llen('outgoing_unused'))+" free phone lines available")
-        fnumber = str(r.rpoplpush('outgoing_unused','outgoing_busy'))
-        self.fnumber = fnumber
-        logger.info("Allocating line {}".format(fnumber))
+        #check to see if this is a simple outgoing gateway or a multi-line one
+        top_gateway = self.station.outgoing_gateways[0]
+        if top_gateway == 0:
+            logger.info(str("Looks like the gateway does not need to acquire a line.")
+            fnumber='3124680992' #make this a database field?
+            self.fnumber=fnumber
+        else:
+            #allocate outgoing line
+            logger.info(str(r.llen('outgoing_unused'))+" free phone lines available")
+            fnumber = str(r.rpoplpush('outgoing_unused','outgoing_busy'))
+            self.fnumber = fnumber
+            logger.info("Allocating line {}".format(fnumber))
 
         #place calls
-        GATEWAY_PREFIX='951'  # This is a hack -- make this part of station or similar db field
-        top_gateway = self.station.outgoing_gateways[0]
-
+        #GATEWAY_PREFIX='951'  # This is a hack -- make this part of station or similar db field
+        
         try:
             call_result = call(   to_number=top_gateway.gateway_prefix+self.station.transmitter_phone.raw_number, 
                                   from_number=fnumber, 
@@ -109,13 +115,15 @@ class News(StateMachine):
                                 )
         except Exception, e:
             logger.error('Failed to place call call', exc_info=True)
+            call_result = 'Error'
 
         if call_result !='Error':
             if call_result.get('Success') == True:
                 self.RequestUUID = call_result.get('RequestUUID')
         logger.info(str(call_result))
         
-        #count successful calls, plan otherwise
+        #count successful calls, 
+        #if not successful, plan otherwise
 
         #launch show-wide listeners
 
@@ -168,8 +176,12 @@ class News(StateMachine):
         #clear is_master semaphore
         if self.is_master == True:
             r.set('is_master_'+str(self.episode_id),'none')
-        r.lrem('outgoing_busy', 0, self.fnumber) #  remove all instances for somenumber
-        r.rpush('outgoing_unused', self.fnumber) #  add them back to the queue
+        #return numbers to stack
+        top_gateway = self.station.outgoing_gateways[0]
+        if top_gateway>0:
+            logger.info("Returning phone numbers to stack."
+            r.lrem('outgoing_busy', 0, self.fnumber) #  remove all instances for somenumber
+            r.rpush('outgoing_unused', self.fnumber) #  add them back to the queue
             
 
     #  Set up states
