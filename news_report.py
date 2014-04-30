@@ -92,7 +92,7 @@ class News(StateMachine):
         #check to see if this is a simple outgoing gateway or a multi-line one
         top_gateway = self.station.outgoing_gateways[0]
         if top_gateway == 0:
-            logger.info(str("Looks like the gateway does not need to acquire a line.")
+            logger.info(str("Looks like the gateway does not need to acquire a line."))
             fnumber='3124680992' #make this a database field?
             self.fnumber=fnumber
         else:
