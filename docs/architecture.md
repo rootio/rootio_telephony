@@ -50,7 +50,9 @@ functionality, for now it is first-class code.  To be honest, we have
 yet to draw a fine line between where the program starts and stops and
 where the station begins, but it should be fairly clear in practice.
 
-Example: A live news report is about to begin.  There are 27 stations
+Example
+-------
+A live news report is about to begin.  There are 27 stations
 subscribed to that report.  The scheduler tells all 27 stations to
 load the news report; the first station to be created grabs the "master"
 token.  Each station initiates the outgoing call to its station phone with 
