@@ -91,7 +91,7 @@ class News(StateMachine):
 
         #check to see if this is a simple outgoing gateway or a multi-line one
         top_gateway = self.station.outgoing_gateways[0]
-        if top_gateway == 0:
+        if top_gateway.number_top == 0:
             logger.info(str("Looks like the gateway does not need to acquire a line."))
             fnumber='3124680992' #make this a database field?
             self.fnumber=fnumber
@@ -106,7 +106,7 @@ class News(StateMachine):
         #GATEWAY_PREFIX='951'  # This is a hack -- make this part of station or similar db field
         
         try:
-            call_result = call(   to_number=top_gateway.gateway_prefix+self.station.transmitter_phone.raw_number, 
+            call_result = call(   to_number="{}{}".format(top_gateway.gateway_prefix,self.station.transmitter_phone.raw_number), 
                                   from_number=fnumber, 
                                   gateway=top_gateway.sofia_string, 
                                   answered='http://127.0.0.1:5000/confer/'+str(self.episode_id)+'/',
