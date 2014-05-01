@@ -32,7 +32,11 @@ Complete list of packages in [requirements.txt](https://github.com/rootio/rootio
 
 ## DOCUMENTATION
 
+Technical documentation is in the docs folder; see for example:
 * [Architecture](docs/architecture.md)
+
+More general information, design philosophy, and usage information is in the wiki:
+* [Wiki](https://github.com/rootio/rootio_telephony/wiki)
 
 ## LICENSE
 
