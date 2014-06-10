@@ -1,4 +1,5 @@
 RootIO Telephony
+================
 
 The RootIO telephony subsystem has grown to encompass more than just
 telephony.  Currently it houses:
@@ -14,6 +15,7 @@ features and media, interactions with the database, etc.
 scheduler.  
 
 Telephony Server
+----------------
 Unlike the Plivo example documents, the telephony server does not have a
 lot of code in its functions; the goal is to handle incoming calls, do
 anything necessary to immediately deal with telephony requirements, but
@@ -30,12 +32,14 @@ Initiating actions happens through Plivo's REST API, and this is done
 primarily by stations and programs. 
 
 Station Daemon
+--------------
 The Daemon spins off a set of station instances into ram, which interact
 with the scheduler, database, and other applications. The scheduler
 should be able to load and unload programs, and handle longer running
 processes like analyzing the station phone over 
 
 Program
+-------
 The program is a state machine with a set of specific modes.  These
 might be a setup mode, which ensures that resources are available and
 loaded, an intro mode, an interactive IVR mode with a live dj, and 
@@ -46,7 +50,9 @@ functionality, for now it is first-class code.  To be honest, we have
 yet to draw a fine line between where the program starts and stops and
 where the station begins, but it should be fairly clear in practice.
 
-Example: A live news report is about to begin.  There are 27 stations
+Example
+-------
+A live news report is about to begin.  There are 27 stations
 subscribed to that report.  The scheduler tells all 27 stations to
 load the news report; the first station to be created grabs the "master"
 token.  Each station initiates the outgoing call to its station phone with 

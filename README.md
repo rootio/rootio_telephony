@@ -1,7 +1,8 @@
 rootio_telephony
 ================
 
-The rootio_telephony system (RTS) is a mostly internal (not outward facing) that takes care of interactions between cloud representations of stations and a) the web interface b) telephony and sms.  
+# ABOUT
+The rootio_telephony system (RTS) is a mostly internal (not outward facing) application that takes care of interactions between cloud representations of stations and a) the web interface b) telephony and sms.  
 
 At the core of RTS is the StationDaemon, one of each of which is spawned upon startup.  Each daemon reacts to messages through ZeroMQ sent from a variety of other sources, such as the telephony server or the scheduler.  It loads program representations (news, music, talk) upon command, spawns listeners and workers as necessary, coordinates recordings and votes and other program-specific activities.
 
@@ -18,3 +19,44 @@ TODO:
   Gateway or SIP system code should be abstracted; for Uganda we are using dedicated DID/DOD lines but in other cases a gsm/sip device like the GOIP would make more sense.
   SMS utils is specific to the GOIP gsm-sip device, and is a hack.
 
+## MAJOR REQUIREMENTS
+
+* Flask
+* SQLAlchemy
+* Alembic
+* ZeroMQ
+* Plivo (the free/open version)
+* FreeSwitch
+
+Complete list of packages in [requirements.txt](https://github.com/rootio/rootio_telephony/blob/master/requirements.txt)
+
+## DOCUMENTATION
+
+Technical documentation is in the docs folder; see for example:
+* [Architecture](docs/architecture.md)
+
+More general information, design philosophy, and usage information is in the wiki:
+* [Wiki](https://github.com/rootio/rootio_telephony/wiki)
+
+## LICENSE
+
+Copyright (c) 2013 RootIO.org
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.
+
+## ACKNOWLEDGEMENTS
+
+* The [Freeswitch](https://www.freeswitch.org/) project is a large and dangerous beast.
+* [Plivo](https://github.com/plivo/plivoframework) developed a smart and free open engine that could use a little more love.
+* [Flask](http://flask.pocoo.org/) is a great web framework for agile and non-standard web interactions.
