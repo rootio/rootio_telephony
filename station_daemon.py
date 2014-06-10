@@ -11,6 +11,7 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from rootio.extensions import db
 
 import zmq
+import json
 import time
 import sys
 from multiprocessing import Process
@@ -109,32 +110,14 @@ class StationDaemon(Station):
             self.r.set(k,'none')
 
         #  start listeners
-        #self.start_listeners()
+        self.start_listeners()
 
-    #  start listeners - so far just a test section
-    #https://learning-0mq-with-pyzmq.readthedocs.org/en/latest/pyzmq/multisocket/tornadoeventloop.html
-    def start_listeners(self):
-        call_listener = Process(target=self.listener, args=(str('station.'+str(self.id)+'.call'), self.process_message))
-        call_listener.start()
-        self.active_workers.append(call_listener)
-        program_listener = Process(target=self.listener, args=(str('station.'+str(self.id)+'.program'), self.process_program))
-        program_listener.start()
-        self.active_workers.append(program_listener)
+########################################################################
+#                   Listeners for messages on calls, sms, 
+#                   program changes, and db updates
+########################################################################
 
-    #  generic process, replace with sms, call, load program, etc.
-    def process_message(self, msg):
-        print "Processing: %s" % msg
-        #m = msg[0].split(' ',1)[1]
-        #print pickle.loads(m)
-
-        #  generic process, replace with sms, call, load program, etc.
-    def process_program(self, msg):
-        print "Processing Program Change: %s" % msg
-        import news_report
-        self.program = news_report.News(3, self)
-        #m = msg[0].split(' ',1)[1]
-        #print pickle.loads(m)
-
+    # Listener function, running 
     def listener(self, channel, function):
         port = MESSAGE_QUEUE_PORT
         context = zmq.Context()
@@ -147,14 +130,45 @@ class StationDaemon(Station):
         ioloop.IOLoop.instance().start()
         print "Worker has stopped processing messages."
 
-#    def load_program():
-#       load program and pass it its episode id, station object
-#
-#    def queue_episode():
-#
-#    def cleanup():
+    #https://learning-0mq-with-pyzmq.readthedocs.org/en/latest/pyzmq/multisocket/tornadoeventloop.html
+    def start_listeners(self):
+        call_listener = Process(target=self.listener, args=(str('station.'+str(self.id)+'.call'), self.process_call))
+        call_listener.start()
+        self.active_workers.append(call_listener)
 
-# testing message server to see if daemons are receiving
+        sms_listener = Process(target=self.listener, args=(str('station.'+str(self.id)+'.sms'), self.process_sms))
+        sms_listener.start()
+        self.active_workers.append(sms_listener)
+
+        program_listener = Process(target=self.listener, args=(str('station.'+str(self.id)+'.program'), self.process_program))
+        program_listener.start()
+        self.active_workers.append(program_listener)
+
+        db_listener = Process(target=self.listener, args=(str('station.'+str(self.id)+'.db'), self.process_db))
+        db_listener.start()
+        self.active_workers.append(db_listener)
+
+    #  respond to call-related messages
+    def process_call(self, msg):
+        logger.info("Processing call: {}".format(msg))
+
+    #  respond to sms messages
+    def process_sms(self, msg):
+        logger.info("Processing sms: {}".format(msg))
+
+    #  respond to program changes
+    def process_program(self, msg):
+        logger.info("Processing program: {}".format(msg))
+        import news_report
+        self.program = news_report.News(3, self)
+
+    #  respond to db changes
+    def process_db(self, msg):
+        change_dict = json.loads(msg)
+        logger.info("Processing db change: {}".format(change_dict))
+
+
+# self test of message server to see if daemons are receiving
 def test_receivers():
     port = MESSAGE_QUEUE_PORT
     context = zmq.Context()
@@ -164,8 +178,9 @@ def test_receivers():
     while True:
         message_topics = ['station.7.program', 'station.7.call','station.7.program', 'station.7.program','sms.station.6', 'call.station.6']
         topic = message_topics[random.randrange(0, len(message_topics))]
-        messagedata = "this is a test message"
-        print "%s %s" % (topic, str(messagedata))
+        dicked = {'this':'that',"if":'then', "1":1,"2":2}
+        messagedata = json.dumps(dicked)
+        print "%s %s" % (topic, messagedata)
         socket.send("%s %s" % (topic, messagedata))
         time.sleep(1)
 

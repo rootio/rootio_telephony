@@ -290,12 +290,20 @@ def confer(parameters, schedule_program_id, action):
                             waitSound = ANSWERED+'waitmusic/',
                             timeLimit = 0, 
                             hangupOnStar=True,
+                            callbackUrl="http://www.foo.com/confevents/", 
+                            callbackMethod="POST", 
+                            digitsMatch="#9,#7,#8",
                             )
         logger.info("RESTXML Response => {}".format(r))
         return render_template('response_template.xml', response=r)
     else:
         logger.info("Could not recognize plivo url variable")
         return "OK"
+
+@telephony_server.route('/confer_events/', methods=['POST'])
+@preload_caller 
+def confer_events(parameters):
+    pass
 
 #  This function should pretty much only be invoked for unsolicited calls 
 @telephony_server.route('/answered/', methods=['GET', 'POST'])
