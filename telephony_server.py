@@ -281,7 +281,10 @@ def confer(parameters, schedule_program_id, action):
         #  This is where station daemons are contacted
         r = plivohelper.Response() 
         from_number = parameters.get('From')
-        #logger.info("url_for format = {}".format(url_for('confer_events')))
+        try:
+            logger.info("url_for format = {}".format(url_for('confer_events')))
+        except Exception:
+            logger.info("unable to get url_for")
         p = r.addConference("plivo", 
                             muted=False, 
                             enterSound="beep:2", 
