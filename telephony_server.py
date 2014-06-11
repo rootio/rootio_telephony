@@ -281,7 +281,7 @@ def confer(parameters, schedule_program_id, action):
         #  This is where station daemons are contacted
         r = plivohelper.Response() 
         from_number = parameters.get('From')
-        logger.info("url_for format = {}".format(url_for(confer_events)))
+        logger.info("url_for format = {}".format(url_for('confer_events')))
         p = r.addConference("plivo", 
                             muted=False, 
                             enterSound="beep:2", 
@@ -291,7 +291,7 @@ def confer(parameters, schedule_program_id, action):
                             waitSound = ANSWERED+'waitmusic/',
                             timeLimit = 0, 
                             hangupOnStar=True,
-                            callbackUrl=ANSWERED+'confer_events/', 
+                            callbackUrl=url_for('confer_events'), 
                             callbackMethod="POST", 
                             digitsMatch="#9,#7,#8",
                             )
