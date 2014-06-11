@@ -1,5 +1,5 @@
 
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, url_for
 from flask import request
 from flask.ext.sqlalchemy import SQLAlchemy
 
@@ -290,7 +290,7 @@ def confer(parameters, schedule_program_id, action):
                             waitSound = ANSWERED+'waitmusic/',
                             timeLimit = 0, 
                             hangupOnStar=True,
-                            callbackUrl="http://www.foo.com/confevents/", 
+                            callbackUrl=url_for(confer_events), 
                             callbackMethod="POST", 
                             digitsMatch="#9,#7,#8",
                             )
@@ -303,7 +303,7 @@ def confer(parameters, schedule_program_id, action):
 @telephony_server.route('/confer_events/', methods=['POST'])
 @preload_caller 
 def confer_events(parameters):
-    pass
+    logger.info("Received a digit in conference.")
 
 #  This function should pretty much only be invoked for unsolicited calls 
 @telephony_server.route('/answered/', methods=['GET', 'POST'])
