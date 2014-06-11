@@ -306,8 +306,11 @@ def confer(parameters, schedule_program_id, action):
 
 @telephony_server.route('/confer_events/', methods=['POST'])
 @preload_caller 
-def confer_events(parameters):
-    logger.info("Received a digit in conference.")
+def confer_events(parameters):       
+    if parameters.get('ConferenceDigitsMatch'):
+        logger.info("Received a digit in conference:{}".format(parameters.get('ConferenceDigitsMatch')))
+    return "OK"
+
 
 #  This function should pretty much only be invoked for unsolicited calls 
 @telephony_server.route('/answered/', methods=['GET', 'POST'])
