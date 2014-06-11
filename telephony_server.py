@@ -294,7 +294,7 @@ def confer(parameters, schedule_program_id, action):
                             waitSound = ANSWERED+'waitmusic/',
                             timeLimit = 0, 
                             hangupOnStar=True,
-                            callbackUrl=ANSWERED+'confer_events/'), 
+                            callbackUrl=ANSWERED+'confer_events/', 
                             callbackMethod="POST", 
                             digitsMatch="#9,#7,#8",
                             )
