@@ -294,9 +294,9 @@ def confer(parameters, schedule_program_id, action):
                             waitSound = ANSWERED+'waitmusic/',
                             timeLimit = 0, 
                             hangupOnStar=True,
-                            callbackUrl=ANSWERED+'confer_events/', 
-                            callbackMethod="POST", 
-                            digitsMatch="#9,#7,#8,7,8,9",
+                            #callbackUrl=ANSWERED+'confer_events/', 
+                            #callbackMethod="POST", 
+                            #digitsMatch="#9,#7,#8,7,8,9",
                             )
         logger.info("RESTXML Response => {}".format(r))
         return render_template('response_template.xml', response=r)
