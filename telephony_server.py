@@ -15,6 +15,7 @@ import datetime
 import requests
 import time
 
+import zmq
 
 import plivohelper
 
@@ -73,6 +74,12 @@ admin.add_view(ModelView(Program, db.session))
 admin.add_view(ModelView(Episode, db.session))
 admin.add_view(ModelView(Role, db.session))
 admin.add_view(ModelView(Gateway, db.session))
+
+#Adding zmq socket for communicating with stations
+port = MESSAGE_QUEUE_PORT
+context = zmq.Context()
+socket = context.socket(zmq.PUB)
+socket.bind("tcp://*:%s" % port)
 
 def get_or_create(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
@@ -335,16 +342,18 @@ def root(parameters):
             station = db.session.query(Station).filter(Station.cloud_phone_id==phone_id).first()
             if station:
                 logger.info("Received call from cloud number:")
-                logger.info(station.name, station.cloud_phone.raw_number)
+                logger.info("Station: {}, Number:{}".format(station.name, station.cloud_phone.raw_number))
                 logger.info("Choosing to not answer")
                 #should send to relevant station now....
-                topic = "station."+station.id+".call"
+                topic = "station.{}.call".format(station.id)
                 from_id = db.session.query(PhoneNumber).filter(PhoneNumber.raw_number==parameters.get('From')).one().id
-                dict = {"type":"call", 
-                        "from":parameters.get('From'),
-                        "from_id":str(from_id.id),
-                        "time":parameters.get('start_time'),
-                        }
+                messagedata =   {
+                                    "type":"call", 
+                                    "from":parameters.get('From'),
+                                    "from_id":from_id.id,
+                                    "time":parameters.get('start_time'),
+                                }
+                socket.send("%s %s" % (topic, messagedata))
                 logger.info("Session name = {}".format(session.get('name')))
                 time.sleep(5),
                 return "OK"
