@@ -114,7 +114,7 @@ class News(StateMachine):
                                   extra_dial_string=top_gateway.extra_string,
                                 )
         except Exception, e:
-            logger.error('Failed to place call call', exc_info=True)
+            logger.error('Failed to place call', exc_info=True)
             call_result = 'Error'
 
         if call_result !='Error':

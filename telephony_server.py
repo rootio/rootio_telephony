@@ -313,6 +313,7 @@ def confer_events(parameters):
 
 
 #  This function should pretty much only be invoked for unsolicited calls 
+
 @telephony_server.route('/answered/', methods=['GET', 'POST'])
 @telephony_server.route('/ringing/', methods=['GET', 'POST'])
 @telephony_server.route('/heartbeat/', methods=['GET', 'POST'])
@@ -329,18 +330,27 @@ def root(parameters):
         return "OK"
     elif request.path == "/answered/":
         if parameters.get('CallStatus') == "ringing":
-            #Check to see if incoming call is from a station's cloud number
-            phone_id = db.session.query(PhoneNumber).filter(PhoneNumber.raw_number==parameters.get('From')).one().id
+            #Check to see if incoming call is TO a station's cloud number -- the public number of the station
+            phone_id = db.session.query(PhoneNumber).filter(PhoneNumber.raw_number==parameters.get('To')).one().id
             station = db.session.query(Station).filter(Station.cloud_phone_id==phone_id).first()
             if station:
                 logger.info("Received call from cloud number:")
                 logger.info(station.name, station.cloud_phone.raw_number)
                 logger.info("Choosing to not answer")
+                #should send to relevant station now....
+                topic = "station."+station.id+".call"
+                from_id = db.session.query(PhoneNumber).filter(PhoneNumber.raw_number==parameters.get('From')).one().id
+                dict = {"type":"call", 
+                        "from":parameters.get('From'),
+                        "from_id":str(from_id.id)
+                        "time":parameters.get('start_time'),
+                        }
+                logger.info("Session name = {}".format(session.get('name')))
                 time.sleep(5)
                 return "OK"
-                # TODO: ADD broadcast to station
             else:
                 logger.info("Received call from non-cloud number")
+                return "OK"
             logger.info("Ringing call from {0} to {1}".format(parameters.get('From'), parameters.get('To')))
 
         #  Not ringing means it is answered    
