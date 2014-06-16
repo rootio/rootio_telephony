@@ -75,11 +75,11 @@ admin.add_view(ModelView(Episode, db.session))
 admin.add_view(ModelView(Role, db.session))
 admin.add_view(ModelView(Gateway, db.session))
 
-#Adding zmq socket for communicating with stations
-port = MESSAGE_QUEUE_PORT
-context = zmq.Context()
-socket = context.socket(zmq.PUB)
-socket.bind("tcp://*:%s" % port)
+#Must send to dispatcher!
+#port = MESSAGE_QUEUE_PORT
+#context = zmq.Context()
+#socket = context.socket(zmq.PUB)
+#socket.bind("tcp://*:%s" % port)
 
 def get_or_create(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
@@ -328,6 +328,7 @@ def confer_events(parameters):
 @preload_caller 
 def root(parameters):
     logger.info("Request.path:{}".format(request.path))
+    debug(request, "root")
     
     if request.path == "/heartbeat/":
         logger.info("Heartbeat for call from {0} to {1}".format(parameters.get('From'), parameters.get('To')))
@@ -353,7 +354,8 @@ def root(parameters):
                                     "from_id":from_id.id,
                                     "time":parameters.get('start_time'),
                                 }
-                socket.send("%s %s" % (topic, messagedata))
+                #have to send this to Josh's dispatcher 
+                #socket.send("%s %s" % (topic, messagedata))
                 logger.info("Session name = {}".format(session.get('name')))
                 time.sleep(5),
                 return "OK"

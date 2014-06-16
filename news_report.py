@@ -22,6 +22,7 @@ from utils import call
 
 from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
+#TODO: Is above just an artifact, should be in station_daemon?
 
 import os,sys
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
