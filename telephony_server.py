@@ -342,11 +342,11 @@ def root(parameters):
                 from_id = db.session.query(PhoneNumber).filter(PhoneNumber.raw_number==parameters.get('From')).one().id
                 dict = {"type":"call", 
                         "from":parameters.get('From'),
-                        "from_id":str(from_id.id)
+                        "from_id":str(from_id.id),
                         "time":parameters.get('start_time'),
                         }
                 logger.info("Session name = {}".format(session.get('name')))
-                time.sleep(5)
+                time.sleep(5),
                 return "OK"
             else:
                 logger.info("Received call from non-cloud number")
