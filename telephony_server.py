@@ -34,6 +34,11 @@ admin = Admin(telephony_server)
 
 telephony_server.config['SECRET_KEY'] = SECRET_KEY
 
+#prep the socket type, address for zmq
+telephony_server.config['ZMQ_SOCKET_TYPE']=zmq.PUB
+telephony_server.config['ZMQ_BIND_ADDR']="tcp://127.0.0.1:55666"
+
+
 # class for binding to zmq
 class ZMQ(object):
 
@@ -57,11 +62,6 @@ class ZMQ(object):
 
     def __getattr__(self, attr):
         return getattr(self.zmq, attr)
-
-#prep the socket type, address for zmq
-telephony_server.config['ZMQ_SOCKET_TYPE']=zmq.PUB
-telephony_server.config['ZMQ_BIND_ADDR']="tcp://127.0.0.1:55666"
-
 
 # Logging
 try:
@@ -352,9 +352,14 @@ def root(parameters):
                                     "time":parameters.get('start_time'),
                 }
                 #send this to Josh's dispatcher
-                if not telephony_server.extensions.get('zmq'):
+                from telephony_server import telephony_server
+		telephony_server.config['ZMQ_SOCKET_TYPE']=zmq.PUB
+		telephony_server.config['ZMQ_BIND_ADDR']="tcp://127.0.0.1:55666"
+		if not telephony_server.extensions.get('zmq'):
                     try:
                         z=ZMQ(telephony_server)
+			#send crap message to initiate socket
+			z.send('test me')
                     except:
                         print "address already taken"
                 z = telephony_server.extensions.get('zmq')
