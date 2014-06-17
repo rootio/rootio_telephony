@@ -76,10 +76,16 @@ admin.add_view(ModelView(Role, db.session))
 admin.add_view(ModelView(Gateway, db.session))
 
 #Must send to dispatcher!
+from multiprocessing import Process
+from zmq.eventloop import ioloop, zmqstream
+ioloop.install()
+
 port = MESSAGE_QUEUE_PORT_TELEPHONY
 context = zmq.Context()
 socket = context.socket(zmq.PUB)
-socket.bind("tcp://*:%s" % port)
+logger.info("Trying to bind to tcp://127.0.0.1:%s" % port)
+socket.connect("tcp://127.0.0.1:%s" % port)
+
 
 def get_or_create(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
