@@ -168,7 +168,7 @@ def preload_caller(func):
             kwargs['parameters'] = parameters
         except Exception, e:
             logger.error('Failed to get uuid', exc_info=True)
-            pass                     
+            pass
             
         #  Handle SMS in, different from calls
         if func.func_name == 'sms_in':
@@ -204,7 +204,8 @@ def preload_caller(func):
                 c.end_time = datetime.now()                                                                     
                 logger.info("about to commit {}".format(str(c.__dict__)))   
                 db.session.add(c)   
-                db.session.commit()       
+                db.session.commit()
+        
         logger.info("Returning Parameters = {}".format(str(kwargs['parameters'])))      
         return func(*args, **kwargs)
     return inner
