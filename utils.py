@@ -54,7 +54,7 @@ def call(to_number, from_number, gateway, answered=ANSWERED,extra_dial_string=EX
         'AnswerUrl' : answered+'answered/',
         'HangupUrl' : answered+'hangup/',
         'RingUrl' : answered+'ringing/',
-    #    'TimeLimit' : '10',
+        'TimeLimit' : '15',
     #    'HangupOnRing': '0',
     }
     request_uuid = ""
