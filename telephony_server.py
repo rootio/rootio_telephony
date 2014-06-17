@@ -34,6 +34,35 @@ admin = Admin(telephony_server)
 
 telephony_server.config['SECRET_KEY'] = SECRET_KEY
 
+# class for binding to zmq
+class ZMQ(object):
+
+    def __init__(self, app=None):
+        self.zmq = None
+        self.app = None
+        if app is not None:
+            self.init_app(app)
+
+    def init_app(self, app):
+        # register extension with app
+        app.extensions = getattr(app, 'extensions', {})
+        self._connect(app)
+        app.extensions['zmq'] = self.zmq
+        self.app = app
+
+    def _connect(self, app):
+        context = zmq.Context()
+        self.zmq = context.socket(app.config['ZMQ_SOCKET_TYPE'])
+        self.zmq.bind(app.config['ZMQ_BIND_ADDR'])
+
+    def __getattr__(self, attr):
+        return getattr(self.zmq, attr)
+
+#prep the socket type, address for zmq
+telephony_server.config['ZMQ_SOCKET_TYPE']=zmq.PUB
+telephony_server.config['ZMQ_BIND_ADDR']="tcp://127.0.0.1:55666"
+
+
 # Logging
 try:
     import logging
@@ -75,16 +104,6 @@ admin.add_view(ModelView(Episode, db.session))
 admin.add_view(ModelView(Role, db.session))
 admin.add_view(ModelView(Gateway, db.session))
 
-#Must send to dispatcher!
-from multiprocessing import Process
-from zmq.eventloop import ioloop, zmqstream
-ioloop.install()
-
-port = MESSAGE_QUEUE_PORT_TELEPHONY
-context = zmq.Context()
-socket = context.socket(zmq.PUB)
-logger.info("Trying to bind to tcp://127.0.0.1:%s" % port)
-socket.connect("tcp://127.0.0.1:%s" % port)
 
 
 def get_or_create(session, model, **kwargs):
@@ -329,10 +348,8 @@ def root(parameters):
                 messagedata =   {
                                     "type":"call", 
                                     "from":parameters.get('From'),
-                                    "from_id":from_id.id,
+                                    "from_id":from_id,
                                     "time":parameters.get('start_time'),
-<<<<<<< HEAD
-<<<<<<< HEAD
                 }
                 #send this to Josh's dispatcher
                 if not telephony_server.extensions.get('zmq'):
@@ -342,17 +359,7 @@ def root(parameters):
                         print "address already taken"
                 z = telephony_server.extensions.get('zmq')
                 z.send_json("%s %s" % (topic, messagedata))
-=======
-                                }
-                #send this to Josh's dispatcher 
-                socket.send("%s %s" % (topic, messagedata))
->>>>>>> parent of 8fd2cf3... Many changes, but the good news is messaging is solved.
-=======
-                                }
-                #send this to Josh's dispatcher 
-                socket.send("%s %s" % (topic, messagedata))
->>>>>>> parent of 8fd2cf3... Many changes, but the good news is messaging is solved.
-                logger.info("Session name = {}".format(session.get('name')))
+                logger.info("ZMQ object = {}".format(z))
                 time.sleep(5),
                 return "OK"
             else:
