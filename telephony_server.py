@@ -360,8 +360,8 @@ def root(parameters):
                                     "from_id":from_id.id,
                                     "time":parameters.get('start_time'),
                                 }
-                #have to send this to Josh's dispatcher 
-                #socket.send("%s %s" % (topic, messagedata))
+                #send this to Josh's dispatcher 
+                socket.send("%s %s" % (topic, messagedata))
                 logger.info("Session name = {}".format(session.get('name')))
                 time.sleep(5),
                 return "OK"
