@@ -110,7 +110,7 @@ class News(StateMachine):
             call_result = call(   to_number="{}".format(self.station.transmitter_phone.raw_number), 
                                   from_number=fnumber, 
                                   gateway=top_gateway.sofia_string, 
-                                  answered='http://127.0.0.1:5000/confer/'+str(self.episode_id)+'/',
+                                  answered='http://127.0.0.1:5000/confer/'+str(self.episode_id)+'/answered/',
                                   #extra_dial_string="bridge_early_media=true,hangup_after_bridge=true,origination_caller_id_name=rootio,caller_name=rootio,origination_caller_id_number="+fnumber,
                                   extra_dial_string=top_gateway.extra_string,
                                 )
