@@ -76,10 +76,10 @@ admin.add_view(ModelView(Role, db.session))
 admin.add_view(ModelView(Gateway, db.session))
 
 #Must send to dispatcher!
-#port = MESSAGE_QUEUE_PORT
-#context = zmq.Context()
-#socket = context.socket(zmq.PUB)
-#socket.bind("tcp://*:%s" % port)
+port = MESSAGE_QUEUE_PORT_TELEPHONY
+context = zmq.Context()
+socket = context.socket(zmq.PUB)
+socket.bind("tcp://*:%s" % port)
 
 def get_or_create(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
@@ -99,7 +99,7 @@ def debug(request, url="url"):
         logger.info(str(deets))
         method = 'POST'
     else:
-        deets = request.args.items()
+        deets = ems()
         logger.info(str(deets))
         method = 'GET'
     deets = dict(deets)

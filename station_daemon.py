@@ -20,6 +20,7 @@ import redis
 
 from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
+MESSAGE_QUEUE_PORT_WEB = "5556"
 
 
 # get access to telephony & web database
@@ -119,7 +120,7 @@ class StationDaemon(Station):
 
     # Listener function, running 
     def listener(self, channel, function):
-        port = MESSAGE_QUEUE_PORT
+        port = MESSAGE_QUEUE_PORT_WEB
         context = zmq.Context()
         socket_sub = context.socket(zmq.SUB)
         socket_sub.connect("tcp://localhost:%s" % port)
@@ -170,7 +171,7 @@ class StationDaemon(Station):
 
 # self test of message server to see if daemons are receiving
 def test_receivers():
-    port = MESSAGE_QUEUE_PORT
+    port = MESSAGE_QUEUE_PORT_WEB
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
     socket.bind("tcp://*:%s" % port)
