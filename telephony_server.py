@@ -169,7 +169,7 @@ def preload_caller(func):
         except Exception, e:
             logger.error('Failed to get uuid', exc_info=True)
             pass                     
-
+            
         #  Handle SMS in, different from calls
         if func.func_name == 'sms_in':
             m = Message()
@@ -210,30 +210,30 @@ def preload_caller(func):
     return inner
         
         
-#@telephony_server.route('/sms/in', methods=['GET', 'POST'])   
-#@preload_caller
-#def sms_in(parameters):
-#    """Receive an sms
-#    { 'uuid': uuid, 
-#      'edt': edt, 
-#      'fr': fr, 
-#      'to': to, 
-#      'from_number': from_number, 
-#      'body': body,
-#    } 
-#    """
-#    logger.info("Parameters =" + str(parameters))    
-#    logger.info("We received an SMS")      
-#    logger.info(parameters['from_number'])
-#    logger.info(str(parameters['from_number']) == SHOW_HOST)                
-#    #look at conferenceplay
-#    #if parameters['from_number'] == SHOW_HOST or parameters['from_number'] == SHOW_HOST[2:]:     
-#    #    answered_url = "http://127.0.0.1:5000/answered/"
-#    #    utils.call("sofia/gateway/switch2voip/",parameters['from_number'], answered_url) 
-#    #else:  #obviously the below would only happen with approval of host
-#    #    answered_url = "http://127.0.0.1:5000/answered/"
-#    #    utils.call("sofia/gateway/switch2voip/",parameters['from_number'], answered_url)       
-#    return "OK"
+@telephony_server.route('/sms/in', methods=['GET', 'POST'])   
+@preload_caller
+def sms_in(parameters):
+    """Receive an sms
+    { 'uuid': uuid, 
+      'edt': edt, 
+      'fr': fr, 
+      'to': to, 
+      'from_number': from_number, 
+      'body': body,
+    } 
+    """
+    logger.info("Parameters =" + str(parameters))    
+    logger.info("We received an SMS")      
+    logger.info(parameters['from_number'])
+    logger.info(str(parameters['from_number']) == SHOW_HOST)                
+    #look at conferenceplay
+    #if parameters['from_number'] == SHOW_HOST or parameters['from_number'] == SHOW_HOST[2:]:     
+    #    answered_url = "http://127.0.0.1:5000/answered/"
+    #    utils.call("sofia/gateway/switch2voip/",parameters['from_number'], answered_url) 
+    #else:  #obviously the below would only happen with approval of host
+    #    answered_url = "http://127.0.0.1:5000/answered/"
+    #    utils.call("sofia/gateway/switch2voip/",parameters['from_number'], answered_url)       
+    return "OK"
 
 
 @telephony_server.route('/waitmusic/', methods=['GET', 'POST'])
