@@ -1,6 +1,6 @@
 
 from flask import Flask, request, render_template, url_for
-from flask import request
+from flask import request, session, g, current_app
 from flask.ext.sqlalchemy import SQLAlchemy
 
 from flask.ext.admin import Admin
@@ -26,13 +26,13 @@ import logging
 
 from config import *
 
-
 telephony_server = Flask("ResponseServer")
 telephony_server.debug = True
 
 admin = Admin(telephony_server)
 
 telephony_server.config['SECRET_KEY'] = SECRET_KEY
+
 
 # Logging
 try:
@@ -75,16 +75,37 @@ admin.add_view(ModelView(Episode, db.session))
 admin.add_view(ModelView(Role, db.session))
 admin.add_view(ModelView(Gateway, db.session))
 
-#Must send to dispatcher!
-from multiprocessing import Process
-from zmq.eventloop import ioloop, zmqstream
-ioloop.install()
+import zmq
+from telephony_server import telephony_server
 
-port = MESSAGE_QUEUE_PORT_TELEPHONY
-context = zmq.Context()
-socket = context.socket(zmq.PUB)
-logger.info("Trying to bind to tcp://127.0.0.1:%s" % port)
-socket.connect("tcp://127.0.0.1:%s" % port)
+
+class ZMQ(object):
+
+    def __init__(self, app=None):
+        self.zmq = None
+        self.app = None
+        if app is not None:
+            self.init_app(app)
+
+    def init_app(self, app):
+        # register extension with app
+        app.extensions = getattr(app, 'extensions', {})
+        self._connect(app)
+        app.extensions['zmq'] = self.zmq
+        self.app = app
+
+    def _connect(self, app):
+        context = zmq.Context()
+        self.zmq = context.socket(app.config['ZMQ_SOCKET_TYPE'])
+        self.zmq.bind(app.config['ZMQ_BIND_ADDR'])
+
+    def __getattr__(self, attr):
+        return getattr(self.zmq, attr)
+
+
+telephony_server.config['ZMQ_SOCKET_TYPE']=zmq.PUB
+telephony_server.config['ZMQ_BIND_ADDR']="tcp://127.0.0.1:55666"
+
 
 
 def get_or_create(session, model, **kwargs):
@@ -357,11 +378,17 @@ def root(parameters):
                 messagedata =   {
                                     "type":"call", 
                                     "from":parameters.get('From'),
-                                    "from_id":from_id.id,
+                                    "from_id":from_id,
                                     "time":parameters.get('start_time'),
                                 }
-                #send this to Josh's dispatcher 
-                socket.send("%s %s" % (topic, messagedata))
+                #send this to Josh's dispatcher
+		if not telephony_server.extensions.get('zmq'):
+			try:
+				z=ZMQ(telephony_server)
+			except:
+				print "address already taken"
+		z = telephony_server.extensions.get('zmq')
+		z.send_json("%s %s" % (topic, messagedata))
                 logger.info("Session name = {}".format(session.get('name')))
                 time.sleep(5),
                 return "OK"
@@ -406,5 +433,11 @@ if __name__ == '__main__':
     if not os.path.isfile("templates/response_template.xml"):
         logger.info("Error : Can't find the XML template : templates/response_template.xml")
     else:
-        telephony_server.run(host='127.0.0.1', port=5000)
+        #with telephony_server.app_context():
+        #    messenger = getattr(g, 'messenger', None)
+	#    if messenger is None:
+        #        g.messenger = configure_messenger(telephony_server)
+	#    print "messenger = {}".format(g.messenger)
+	#    g.messenger.send("%s %s" % ('9', '__main__ send test'))
+	telephony_server.run(host='127.0.0.1', port=5000)
 
