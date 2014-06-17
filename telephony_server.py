@@ -332,6 +332,7 @@ def root(parameters):
                                     "from_id":from_id.id,
                                     "time":parameters.get('start_time'),
 <<<<<<< HEAD
+<<<<<<< HEAD
                 }
                 #send this to Josh's dispatcher
                 if not telephony_server.extensions.get('zmq'):
@@ -341,6 +342,11 @@ def root(parameters):
                         print "address already taken"
                 z = telephony_server.extensions.get('zmq')
                 z.send_json("%s %s" % (topic, messagedata))
+=======
+                                }
+                #send this to Josh's dispatcher 
+                socket.send("%s %s" % (topic, messagedata))
+>>>>>>> parent of 8fd2cf3... Many changes, but the good news is messaging is solved.
 =======
                                 }
                 #send this to Josh's dispatcher 
