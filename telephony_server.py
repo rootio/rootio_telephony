@@ -35,8 +35,8 @@ admin = Admin(telephony_server)
 telephony_server.config['SECRET_KEY'] = SECRET_KEY
 
 #prep the socket type, address for zmq
-telephony_server.config['ZMQ_SOCKET_TYPE']=zmq.PUB
-telephony_server.config['ZMQ_BIND_ADDR']="tcp://127.0.0.1:55666"
+telephony_server.config['ZMQ_SOCKET_TYPE'] = zmq.PUB
+telephony_server.config['ZMQ_BIND_ADDR'] = ZMQ_FORWARDER_SPITS_OUT
 
 
 # class for binding to zmq
@@ -58,7 +58,7 @@ class ZMQ(object):
     def _connect(self, app):
         context = zmq.Context()
         self.zmq = context.socket(app.config['ZMQ_SOCKET_TYPE'])
-        self.zmq.bind(app.config['ZMQ_BIND_ADDR'])
+        self.zmq.connect(app.config['ZMQ_BIND_ADDR'])
 
     def __getattr__(self, attr):
         return getattr(self.zmq, attr)
@@ -354,7 +354,7 @@ def root(parameters):
                 #send this to Josh's dispatcher
                 from telephony_server import telephony_server
 		telephony_server.config['ZMQ_SOCKET_TYPE']=zmq.PUB
-		telephony_server.config['ZMQ_BIND_ADDR']="tcp://127.0.0.1:55666"
+		telephony_server.config['ZMQ_BIND_ADDR']="tcp://127.0.0.1:55777"
 		if not telephony_server.extensions.get('zmq'):
                     try:
                         z=ZMQ(telephony_server)
