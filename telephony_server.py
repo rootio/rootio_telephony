@@ -33,11 +33,10 @@ admin = Admin(telephony_server)
 telephony_server.config['SECRET_KEY'] = SECRET_KEY
 
 #prep the socket type, address for zmq
-telephony_server.config['ZMQ_SOCKET_TYPE']=zmq.PUB
-telephony_server.config['ZMQ_BIND_ADDR']="tcp://127.0.0.1:55666"
+telephony_server.config['ZMQ_SOCKET_TYPE'] = zmq.PUB
+telephony_server.config['ZMQ_BIND_ADDR'] = ZMQ_FORWARDER_SPITS_OUT
 
 logger = init_logging()
-
 
 from rootio.extensions import db  # expects symlink of rootio in own directory
 telephony_server.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
@@ -307,7 +306,7 @@ def root(parameters):
                 #send this to Josh's dispatcher
                 from telephony_server import telephony_server
                 telephony_server.config['ZMQ_SOCKET_TYPE']=zmq.PUB
-                telephony_server.config['ZMQ_BIND_ADDR']="tcp://127.0.0.1:55666"
+                telephony_server.config['ZMQ_BIND_ADDR']=ZMQ_FORWARDER_SUCKS_IN
                 if not telephony_server.extensions.get('zmq'):
                     try:
                         z=ZMQ(telephony_server)
