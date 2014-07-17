@@ -18,7 +18,7 @@ import zmq
 from config import *
 import redis
 
-from utils import call
+from utils import call, init_logging
 
 from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
@@ -28,38 +28,9 @@ import os,sys
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 from yapsy.IPlugin import IPlugin
 
-########################################################################
-#                   Logging
-########################################################################
+logger = init_logging()
 
-import logging
-
-try:
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
-
-    # create a file handler
-    handler = logging.FileHandler('logs/program.log', mode='a')
-    handler.setLevel(logging.INFO)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-
-    # create a logging format
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    ch.setFormatter(formatter)
-
-    # add the handlers to the logger
-    logger.addHandler(handler)
-    logger.addHandler(ch)
-except Exception, e:
-    logger.error('Failed to open logger', exc_info=True)
-
-########################################################################
-#                   Logging
-########################################################################
-
+# redis is used for flagging is_master if program is across multiple stations
 r = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 class News(StateMachine):

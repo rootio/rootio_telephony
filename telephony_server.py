@@ -6,7 +6,7 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.admin import Admin
 from flask.ext.admin.contrib.sqla import ModelView
 
-from utils import call
+from utils import call, init_logging, ZMQ
 import utils
 
 import sys
@@ -18,11 +18,9 @@ import time
 import zmq
 
 import plivohelper
-
 from functools import wraps
-
 from yapsy.PluginManager import PluginManager
-import logging
+
 
 from config import *
 
@@ -38,53 +36,8 @@ telephony_server.config['SECRET_KEY'] = SECRET_KEY
 telephony_server.config['ZMQ_SOCKET_TYPE']=zmq.PUB
 telephony_server.config['ZMQ_BIND_ADDR']="tcp://127.0.0.1:55666"
 
+logger = init_logging()
 
-# class for binding to zmq
-class ZMQ(object):
-
-    def __init__(self, app=None):
-        self.zmq = None
-        self.app = None
-        if app is not None:
-            self.init_app(app)
-
-    def init_app(self, app):
-        # register extension with app
-        app.extensions = getattr(app, 'extensions', {})
-        self._connect(app)
-        app.extensions['zmq'] = self.zmq
-        self.app = app
-
-    def _connect(self, app):
-        context = zmq.Context()
-        self.zmq = context.socket(app.config['ZMQ_SOCKET_TYPE'])
-        self.zmq.bind(app.config['ZMQ_BIND_ADDR'])
-
-    def __getattr__(self, attr):
-        return getattr(self.zmq, attr)
-
-# Logging
-try:
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
-
-    # create a file handler
-    handler = logging.FileHandler('logs/telephony.log', mode='a')
-    handler.setLevel(logging.INFO)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-
-    # create a logging format
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    ch.setFormatter(formatter)
-
-    # add the handlers to the logger
-    logger.addHandler(handler)
-    logger.addHandler(ch)
-except Exception, e:
-    logger.error('Failed to open logger', exc_info=True)
 
 from rootio.extensions import db  # expects symlink of rootio in own directory
 telephony_server.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
@@ -353,13 +306,13 @@ def root(parameters):
                 }
                 #send this to Josh's dispatcher
                 from telephony_server import telephony_server
-		telephony_server.config['ZMQ_SOCKET_TYPE']=zmq.PUB
-		telephony_server.config['ZMQ_BIND_ADDR']="tcp://127.0.0.1:55666"
-		if not telephony_server.extensions.get('zmq'):
+                telephony_server.config['ZMQ_SOCKET_TYPE']=zmq.PUB
+                telephony_server.config['ZMQ_BIND_ADDR']="tcp://127.0.0.1:55666"
+                if not telephony_server.extensions.get('zmq'):
                     try:
                         z=ZMQ(telephony_server)
-			#send crap message to initiate socket
-			z.send('test me')
+                        #send crap message to initiate socket
+                        z.send('test me')
                     except:
                         print "address already taken"
                 z = telephony_server.extensions.get('zmq')

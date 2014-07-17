@@ -8,9 +8,10 @@ from config import *
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
 
-from rootio.extensions import db
+from rootio.extnsions import db
 
 import zmq
+from utils import ZMQ, init_logging
 import json
 import time
 import sys
@@ -20,8 +21,7 @@ import redis
 
 from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
-MESSAGE_QUEUE_PORT_WEB = "5556"
-
+MESSAGE_QUEUE_PORT_WEB = ZMQ_FORWARDER_SPITS_OUT
 
 # get access to telephony & web database
 telephony_server = Flask("ResponseServer")
@@ -33,67 +33,23 @@ from rootio.radio.models import *
 telephony_server.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 db = SQLAlchemy(telephony_server)
 
-# logging
-import logging
+logger = init_logging()
 
-try:
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
-
-    # create a file handler
-    handler = logging.FileHandler('logs/telephony.log', mode='a')
-    handler.setLevel(logging.INFO)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-
-    # create a logging format
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    ch.setFormatter(formatter)
-
-    # add the handlers to the logger
-    logger.addHandler(handler)
-    logger.addHandler(ch)
-except Exception, e:
-    logger.error('Failed to open logger', exc_info=True)
-
-
-
-
-
-#for realz, create daemon class
+# Daemon class
 class StationDaemon(Station):
     def __init__(self, station_id):
         logger.info("Hello World")
         self.gateway = 'sofia/gateway/utl'
         self.caller_queue = []
         self.active_workers = []
-
         try:
-            original = db.session.query(Station).filter(Station.id == station_id).one()
-            print original
+            self.station = = db.session.query(Station).filter(Station.id == station_id).one()
         except Exception, e:
             logger.error('Could not load one unique station', exc_info=True)
-        #  copy database item to daemon item -- tried to automate this but couldn't make keys
-        self.about = original.about
-        self.name = original.name
-        self.network_id = original.network_id
-        self.cloud_phone_id = original.cloud_phone_id
-        self.cloud_phone = original.cloud_phone
-        self.frequency = original.frequency
-        self.transmitter_phone_id = original.transmitter_phone_id
-        self.transmitter_phone = original.transmitter_phone
-        self.api_key = original.api_key
-        self.location_id = original.location_id
-        self.id = original.id
-        self.owner_id = original.owner_id
-        self.program = None
-        self.outgoing_gateways = original.outgoing_gateways
-        self.incoming_gateways = original.incoming_gateways
 
+        # This is for UTL outgoing ONLY.  Should be moved to a utility just for the gateway, or such.
         try:
-            self.r = redis.StrictRedis(host='localhost', port=6379, db=0)
+            self.r = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=OUTGOING_NUMBERS_REDIS_DB)
         except Exception, e:
             logger.error('Could not open redis connection', exc_info=True)
         #   INITIATE OUTGOING NUMBERS HERE
@@ -126,26 +82,26 @@ class StationDaemon(Station):
         socket_sub.connect("tcp://localhost:%s" % port)
         socket_sub.setsockopt(zmq.SUBSCRIBE, str(channel))
         stream_sub = zmqstream.ZMQStream(socket_sub)
-        stream_sub.on_recv(function)
+        stream_sub.on_recv_multipart(function)
         print "Connected to publisher with port %s" % port
         ioloop.IOLoop.instance().start()
         print "Worker has stopped processing messages."
 
     #https://learning-0mq-with-pyzmq.readthedocs.org/en/latest/pyzmq/multisocket/tornadoeventloop.html
     def start_listeners(self):
-        call_listener = Process(target=self.listener, args=(str('station.'+str(self.id)+'.call'), self.process_call))
+        call_listener = Process(target=self.listener, args=(str('station.'+str(self.station.id)+'.call'), self.process_call))
         call_listener.start()
         self.active_workers.append(call_listener)
 
-        sms_listener = Process(target=self.listener, args=(str('station.'+str(self.id)+'.sms'), self.process_sms))
+        sms_listener = Process(target=self.listener, args=(str('station.'+str(self.station.id)+'.sms'), self.process_sms))
         sms_listener.start()
         self.active_workers.append(sms_listener)
 
-        program_listener = Process(target=self.listener, args=(str('station.'+str(self.id)+'.program'), self.process_program))
+        program_listener = Process(target=self.listener, args=(str('station.'+str(self.station.id)+'.program'), self.process_program))
         program_listener.start()
         self.active_workers.append(program_listener)
 
-        db_listener = Process(target=self.listener, args=(str('station.'+str(self.id)+'.db'), self.process_db))
+        db_listener = Process(target=self.listener, args=(str('station.'+str(self.station.id)+'.db'), self.process_db))
         db_listener.start()
         self.active_workers.append(db_listener)
 
