@@ -3,12 +3,38 @@ from time import sleep
 
 from config import *
 
-import logger
 
 ANSWERED = 'http://127.0.0.1:5000/'  
 SOUNDS_ROOT = 'http://176.58.125.166/~csik/sounds/'
 EXTRA_DIAL_STRING = "bridge_early_media=true,hangup_after_bridge=true"
 
+def init_logging(file):
+    try:
+        import logging
+        logger = logging.getLogger(file)
+        logger.setLevel(logging.INFO)
+    
+        # create a file handler
+        handler = logging.FileHandler('logs/telephony.log', mode='a')
+        handler.setLevel(logging.INFO)
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+    
+        # create a logging format
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        ch.setFormatter(formatter)
+    
+        # add the handlers to the logger
+        logger.addHandler(handler)
+        logger.addHandler(ch)
+        return logger
+    except Exception, e:
+        logger.error('Failed to open logger', exc_info=True)
+        return None
+
+
+logger = init_logging('utils')
 
 
 def call(to_number, from_number, gateway, answered=ANSWERED,extra_dial_string=EXTRA_DIAL_STRING):
@@ -137,32 +163,6 @@ def bulk_call(to_numbers, from_number, gateway, answered=ANSWERED,extra_dial_str
         pass
     return "Error"   
 
-
-
-def init_logging():
-    try:
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.INFO)
-    
-        # create a file handler
-        handler = logging.FileHandler('logs/telephony.log', mode='a')
-        handler.setLevel(logging.INFO)
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.INFO)
-    
-        # create a logging format
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
-        ch.setFormatter(formatter)
-    
-        # add the handlers to the logger
-        logger.addHandler(handler)
-        logger.addHandler(ch)
-        return logger
-    except Exception, e:
-        logger.error('Failed to open logger', exc_info=True)
-        return None
 
 
 class ZMQ(object):

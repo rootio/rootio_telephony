@@ -8,7 +8,7 @@ from config import *
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
 
-from rootio.extnsions import db
+from rootio.extensions import db
 
 import zmq
 from utils import ZMQ, init_logging
@@ -33,7 +33,7 @@ from rootio.radio.models import *
 telephony_server.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 db = SQLAlchemy(telephony_server)
 
-logger = init_logging()
+logger = init_logging('station_daemon')
 
 # Daemon class
 class StationDaemon(Station):
@@ -43,10 +43,10 @@ class StationDaemon(Station):
         self.caller_queue = []
         self.active_workers = []
         try:
-            self.station = = db.session.query(Station).filter(Station.id == station_id).one()
+            self.station = db.session.query(Station).filter(Station.id == station_id).one()
         except Exception, e:
             logger.error('Could not load one unique station', exc_info=True)
-
+	logger.info("Initializing station: {}".format(self.station.name))
         # This is for UTL outgoing ONLY.  Should be moved to a utility just for the gateway, or such.
         try:
             self.r = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=OUTGOING_NUMBERS_REDIS_DB)
@@ -79,10 +79,10 @@ class StationDaemon(Station):
         port = MESSAGE_QUEUE_PORT_WEB
         context = zmq.Context()
         socket_sub = context.socket(zmq.SUB)
-        socket_sub.connect("tcp://localhost:%s" % port)
+        socket_sub.connect(ZMQ_FORWARDER_SPITS_OUT)
         socket_sub.setsockopt(zmq.SUBSCRIBE, str(channel))
         stream_sub = zmqstream.ZMQStream(socket_sub)
-        stream_sub.on_recv_multipart(function)
+        stream_sub.on_recv(function)
         print "Connected to publisher with port %s" % port
         ioloop.IOLoop.instance().start()
         print "Worker has stopped processing messages."
@@ -117,7 +117,8 @@ class StationDaemon(Station):
     def process_program(self, msg):
         logger.info("Processing program: {}".format(msg))
         import news_report
-        self.program = news_report.News(3, self)
+	logger.info("for station {}".format(self.station.name))
+        self.program = news_report.News(3, self.station)
 
     #  respond to db changes
     def process_db(self, msg):

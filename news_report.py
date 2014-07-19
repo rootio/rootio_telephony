@@ -28,7 +28,7 @@ import os,sys
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 from yapsy.IPlugin import IPlugin
 
-logger = init_logging()
+logger = init_logging('news_report')
 
 # redis is used for flagging is_master if program is across multiple stations
 r = redis.StrictRedis(host='localhost', port=6379, db=0)
@@ -39,7 +39,7 @@ class News(StateMachine):
     def __init__(self, episode_id, station):
         self.caller_list = "caller_list-{0}".format(episode_id)
         self.sound_url = "{}{}{}{}".format(TELEPHONY_SERVER_IP,'/~csik/sounds/programs/',episode_id,'/current.mp3')
-        self.conference = "news_report_conference-{}".format(episode_id)
+        self.conference = "plivo" #"news_report_conference-{}".format(episode_id)
         self.station = station
         self.episode_id = episode_id
         self.is_master = False
@@ -48,7 +48,7 @@ class News(StateMachine):
 
     def setup(self):
         logger.info("News_Report: In setup")
-
+	logger.info("... for station {}".format(self.station.name))
         #  Check if this instance should be master
         if r.get('is_master_'+str(self.episode_id)) == 'none':
             r.set('is_master_'+str(self.episode_id),self.station.id)
@@ -62,6 +62,7 @@ class News(StateMachine):
             logger.error('No sound file available at url:'.format(self.sound_url))
 
         #check to see if this is a simple outgoing gateway or a multi-line one
+	logger.info('Station name: {}'.format(self.station.name))
         top_gateway = self.station.outgoing_gateways[0]
         if top_gateway.number_top == 0:
             logger.info(str("Looks like the gateway does not need to acquire a line."))
@@ -111,14 +112,15 @@ class News(StateMachine):
         logger.info("In REPORT of news report {}".format(self.conference))
         #play report sound
         if self.is_master == True:
-            self.conference
+            logger.info("In conference: {}".format(self.conference))
             # Create a REST object
             plivo = plivohelper.REST(REST_API_URL, SID, AUTH_TOKEN, API_VERSION)
-            call_params = {'ConferenceName':'plivo', 'MemberID':'all', 'FilePath':'/home/csik/public_html/sounds/programs/3/current.mp3'}
+            call_params = {'ConferenceName':'plivo', 'MemberID':'all', 'FilePath':'/home/csik/public_html/sounds/programs/5/current.mp3'}
             try:
-                print plivo.conference_play(call_params)
+                result = plivo.conference_play(call_params)
+		logger.info("Result of conference play: {}".format(result))
             except Exception, e:
-                print e    
+                logger.info("Exception in news_report REPORT: {},{}".format(Exception, e))    
                     #check on calls?
                     #
             

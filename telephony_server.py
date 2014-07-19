@@ -36,7 +36,7 @@ telephony_server.config['SECRET_KEY'] = SECRET_KEY
 telephony_server.config['ZMQ_SOCKET_TYPE'] = zmq.PUB
 telephony_server.config['ZMQ_BIND_ADDR'] = ZMQ_FORWARDER_SPITS_OUT
 
-logger = init_logging()
+logger = init_logging('telephony_server')
 
 from rootio.extensions import db  # expects symlink of rootio in own directory
 telephony_server.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
@@ -223,7 +223,7 @@ def confer(parameters, schedule_program_id, action):
     #               If Direction is outbound then 2 additional params:
     #               'ALegUUID': Unique Id for first leg,
     #               'ALegRequestUUID': request id given at the time of api call
-
+    logger.info("confer is receiveing schedule_program_id: {}     action: {}".format(schedule_program_id, action))
     if action == "ringing":
         logger.info("Ringing for scheduled_program {}".format(schedule_program_id))
         return "OK"
@@ -235,7 +235,8 @@ def confer(parameters, schedule_program_id, action):
         logger.info("Hangup for scheduled_program {}".format(schedule_program_id))
         return "OK"
     elif action == "answered":
-        #  This is where station daemons are contacted
+        logger.info("*Answered for scheduled_program {}".format(schedule_program_id))
+	#  This is where station daemons are contacted
         r = plivohelper.Response() 
         from_number = parameters.get('From')
         try:
@@ -253,7 +254,7 @@ def confer(parameters, schedule_program_id, action):
                             hangupOnStar=True,
                             callbackUrl=ANSWERED+'confer_events/', 
                             callbackMethod="POST", 
-                            digitsMatch="#9,#7,#8,7,8,9",
+                            #digitsMatch="#9,#7,#8,7,8,9",
                             )
         logger.info("RESTXML Response => {}".format(r))
         return render_template('response_template.xml', response=r)
