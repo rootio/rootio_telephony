@@ -16,6 +16,7 @@ from rootio.extensions import db
 from flask.ext.sqlalchemy import SQLAlchemy
 telephony_server.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 db = SQLAlchemy(telephony_server)
+
 from rootio.telephony.models import *
 from rootio.radio.models import *
 from rootio.user.models import *

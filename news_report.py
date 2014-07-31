@@ -1,7 +1,6 @@
 from fluidity import StateMachine, state, transition
 import plivohelper
 
-
 """
 Sketch of news show.  
 
@@ -27,6 +26,22 @@ ioloop.install()
 import os,sys
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 from yapsy.IPlugin import IPlugin
+import time
+
+# get access to telephony & web database
+from flask import Flask
+from flask.ext.sqlalchemy import SQLAlchemy
+from rootio.extensions import db
+
+telephony_server = Flask("ResponseServer")
+telephony_server.debug = True
+
+from rootio.telephony.models import *
+from rootio.radio.models import *
+
+telephony_server.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
+db = SQLAlchemy(telephony_server)
+
 
 logger = init_logging('news_report')
 
@@ -36,12 +51,14 @@ r = redis.StrictRedis(host='localhost', port=6379, db=0)
 class News(StateMachine):
     initial_state = 'setup'
 
-    def __init__(self, episode_id, station):
+    def __init__(self, episode_id, station_id):
         self.caller_list = "caller_list-{0}".format(episode_id)
         self.sound_url = "{}{}{}{}".format(TELEPHONY_SERVER_IP,'/~csik/sounds/programs/',episode_id,'/current.mp3')
         self.conference = "plivo" #"news_report_conference-{}".format(episode_id)
-        self.station = station
-        self.episode_id = episode_id
+        testme = db.session.query(Station).filter(Station.id == station_id).first()
+	logger.info("testme : {}    type : {}".format(testme, type(testme)))
+        self.station = testme
+	self.episode_id = episode_id
         self.is_master = False
         self.fnumber = None
         super(News, self).__init__()
@@ -63,22 +80,28 @@ class News(StateMachine):
 
         #check to see if this is a simple outgoing gateway or a multi-line one
 	logger.info('Station name: {}'.format(self.station.name))
-        top_gateway = self.station.outgoing_gateways[0]
-        if top_gateway.number_top == 0:
-            logger.info(str("Looks like the gateway does not need to acquire a line."))
-            fnumber='3124680992' #make this a database field?
-            self.fnumber=fnumber
-        else:
-            #allocate outgoing line
-            logger.info(str(r.llen('outgoing_unused'))+" free phone lines available")
-            fnumber = str(r.rpoplpush('outgoing_unused','outgoing_busy'))
-            self.fnumber = fnumber
-            logger.info("Allocating line {}".format(fnumber))
-
+        try:
+	    top_gateway = self.station.outgoing_gateways[0]
+            if top_gateway.number_top == 0:
+                logger.info(str("Looks like the gateway does not need to acquire a line."))
+                fnumber='3124680992' #make this a database field?
+                self.fnumber=fnumber
+            else:
+                #allocate outgoing line
+                logger.info(str(r.llen('outgoing_unused'))+" free phone lines available")
+                fnumber = str(r.rpoplpush('outgoing_unused','outgoing_busy'))
+                self.fnumber = fnumber
+                logger.info("Allocating line {}".format(fnumber))
+	except Exception, e:
+		logger.debug("Exception: {}    --    {}".format(Exception, e))
         #place calls
         #GATEWAY_PREFIX='951'  # This is a hack -- make this part of station or similar db field
-        
+        logger.info("Trying to get transmitter_phone.raw_number for station {}".format(self.station.name)) 
         try:
+		logger.info("self.station.transmitter_phone.raw_number = {}".format(self.station.transmitter_phone))
+	except Exception, e:
+		logger.info("Failed to get transmitter_phone.raw_number", exc_info = True)
+	try:
             call_result = call(   to_number="{}".format(self.station.transmitter_phone.raw_number), 
                                   from_number=fnumber, 
                                   gateway=top_gateway.sofia_string, 
@@ -94,7 +117,7 @@ class News(StateMachine):
             if call_result.get('Success') == True:
                 self.RequestUUID = call_result.get('RequestUUID')
         logger.info(str(call_result))
-        
+    	time.sleep(10)    
         #count successful calls, 
         #if not successful, plan otherwise
 
@@ -123,7 +146,7 @@ class News(StateMachine):
                 logger.info("Exception in news_report REPORT: {},{}".format(Exception, e))    
                     #check on calls?
                     #
-            
+        time.sleep(120)    
 
     def outro(self):
         logger.info("In OUTRO to news report {}".format(self.conference))

@@ -18,6 +18,8 @@ import sys
 from multiprocessing import Process
 import random
 import redis
+import isodate
+from datetime import datetime
 
 from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
@@ -122,9 +124,20 @@ class StationDaemon(Station):
 
     #  respond to db changes
     def process_db(self, msg):
-        change_dict = json.loads(msg)
+        change_dict = json.loads(msg[1])  #pull payload from message
         logger.info("Processing db change: {}".format(change_dict))
+	logger.info("about to test if conditions right to launch a program")
+	if (change_dict['operation'] == 'insert' or change_dict['operation'] == 'update') and isodate.parse_datetime(change_dict['start_time']) <= datetime.now():
+		logger.info("We have successful conditions to launch a program!")
+ 		import news_report
+		self.program = news_report.News(3, self.station.id)
+		time.sleep(3) #this should really be a callback! see below for process_connected_transmitter()
+		self.program.report() 
+		self.program.teardown()
 
+    #  respond to successful connect to transmitter phone
+    def process_connected_transmitter(self, msg):
+	pass
 
 # self test of message server to see if daemons are receiving
 def test_receivers():
