@@ -4,7 +4,7 @@ from time import sleep
 from config import *
 
 
-ANSWERED = 'http://127.0.0.1:5000/'  
+ANSWERED = 'http://127.0.0.1:5000/'
 SOUNDS_ROOT = 'http://176.58.125.166/~csik/sounds/'
 EXTRA_DIAL_STRING = "bridge_early_media=true,hangup_after_bridge=true"
 
@@ -13,18 +13,18 @@ def init_logging(file):
         import logging
         logger = logging.getLogger(file)
         logger.setLevel(logging.INFO)
-    
+
         # create a file handler
         handler = logging.FileHandler('logs/telephony.log', mode='a')
         handler.setLevel(logging.INFO)
         ch = logging.StreamHandler()
         ch.setLevel(logging.INFO)
-    
+
         # create a logging format
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
         ch.setFormatter(formatter)
-    
+
         # add the handlers to the logger
         logger.addHandler(handler)
         logger.addHandler(ch)
@@ -74,19 +74,19 @@ def call(to_number, from_number, gateway, answered=ANSWERED,extra_dial_string=EX
         logger.error('Failed to make utils.call', exc_info=True)
         pass
     return "Error"
-    
+
 #   ONLY CONNECTS FIRST SUCCESSFUL CONNECTION
-def group_call(gateway, phone_numbers, answered): 
+def group_call(gateway, phone_numbers, answered):
     print "gateway = "+gateway
     print "phone_numbers = "+phone_numbers
     print "answered = "+answered
 
     # Define Channel Variable - http://wiki.freeswitch.org/wiki/Channel_Variables
     extra_dial_string = "bridge_early_media=true,hangup_after_bridge=true"
-    
+
     # Create a REST object
     plivo = plivohelper.REST(REST_API_URL, SID, AUTH_TOKEN, API_VERSION)
-    
+
     # Initiate a new outbound call to user/1000 using a HTTP POST
     # All parameters for bulk calls shall be separated by a delimeter
     call_params = {
@@ -123,11 +123,11 @@ def group_call(gateway, phone_numbers, answered):
 
 
 #   CONNECTS MULTIPLES
-def bulk_call(to_numbers, from_number, gateway, answered=ANSWERED,extra_dial_string=EXTRA_DIAL_STRING): 
+def bulk_call(to_numbers, from_number, gateway, answered=ANSWERED,extra_dial_string=EXTRA_DIAL_STRING):
 
     # Create a REST object
     plivo = plivohelper.REST(REST_API_URL, SID, AUTH_TOKEN, API_VERSION)
-    
+
     # Initiate a new outbound call using a HTTP POST
     # All parameters for bulk calls shall be separated by a delimeter
     call_params = {
@@ -161,12 +161,12 @@ def bulk_call(to_numbers, from_number, gateway, answered=ANSWERED,extra_dial_str
     except Exception, e:
         logger.error('Failed to make utils.bulkcall', exc_info=True)
         pass
-    return "Error"   
+    return "Error"
 
 
 
 class ZMQ(object):
-    
+
     def __init__(self, app=None):
         self.zmq = None
         self.app = None
@@ -187,5 +187,6 @@ class ZMQ(object):
 
     def __getattr__(self, attr):
         return getattr(self.zmq, attr)
+
 
 

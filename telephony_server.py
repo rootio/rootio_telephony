@@ -32,7 +32,7 @@ admin = Admin(telephony_server)
 
 telephony_server.config['SECRET_KEY'] = SECRET_KEY
 
-#prep the socket type, address for zmq
+# prep the socket type, address for zmq
 telephony_server.config['ZMQ_SOCKET_TYPE'] = zmq.PUB
 telephony_server.config['ZMQ_BIND_ADDR'] = ZMQ_FORWARDER_SPITS_OUT
 
@@ -57,7 +57,6 @@ admin.add_view(ModelView(Role, db.session))
 admin.add_view(ModelView(Gateway, db.session))
 
 
-
 def get_or_create(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
     if instance:
@@ -69,8 +68,8 @@ def get_or_create(session, model, **kwargs):
         return instance
 
 
-def debug(request, url="url"): 
-    logger.info( "#####ENTERING {0} #####".format(url))
+def debug(request, url="url"):
+    logger.info("#####ENTERING {0} #####".format(url))
     if request.method == 'POST':
         deets = request.form.items()
         logger.info(str(deets))
@@ -90,100 +89,131 @@ def page_not_found(error):
     return 'This URL does not exist', 404
 
 
-
 def preload_caller(func):
     @wraps(func)
     def inner(*args, **kwargs):
         logger.info("""
             ###################################################
-            #     entering function: -------->   {0}     
+            #     entering function: -------->   {0}
             ###################################################""".format(func.func_name))
-        #  Separate request into a single dict called "parameters" to erase the difference between 
+        #  Separate request into a single dict called "parameters" to erase the difference between
         #  get and post representations
         if request.method == 'POST':
             parameters = dict(request.form.items())
             parameters['request_method'] = request.method
-        else:         
-            parameters = dict(request.args.items())    
+        else:
+            parameters = dict(request.args.items())
             parameters['request_method'] = request.method
 
-        #  Print UUID and standardize it to uuid regardless, swap the original kwargs for our version
-        try:                                                            
+        # Print UUID and standardize it to uuid regardless, swap the original
+        # kwargs for our version
+        try:
             if parameters.get('uuid'):
-                logger.info(request.method + ", CallUUID: {0}".format(parameters['uuid']))
+                logger.info(
+                    request.method +
+                    ", CallUUID: {0}".format(
+                        parameters['uuid']))
             else:
-                logger.info(request.method + ", CallUUID: {0}".format(parameters['CallUUID']))
-                parameters['uuid'] = parameters['CallUUID'] 
+                logger.info(
+                    request.method +
+                    ", CallUUID: {0}".format(
+                        parameters['CallUUID']))
+                parameters['uuid'] = parameters['CallUUID']
             # Here's where we swap the original kwargs for our version
             kwargs['parameters'] = parameters
-        except Exception, e:
+        except Exception as e:
             logger.error('Failed to get uuid', exc_info=True)
             pass
-            
         #  Handle SMS in, different from calls
         if func.func_name == 'sms_in':
             m = Message()
             m.message_uuid = parameters.get('uuid')
             m.sendtime = parameters.get('edt')
             m.text = parameters.get('body')
-            m.from_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number=parameters.get('from_number'), number=parameters.get('from_number')).id
-            m.to_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number=parameters.get('fr'), number=parameters.get('fr')).id         
+            m.from_phonenumber_id = get_or_create(
+                db.session,
+                PhoneNumber,
+                raw_number=parameters.get('from_number'),
+                number=parameters.get('from_number')).id
+            m.to_phonenumber_id = get_or_create(
+                db.session,
+                PhoneNumber,
+                raw_number=parameters.get('fr'),
+                number=parameters.get('fr')).id
             logger.info("about to commit {}".format(str(m.__dict__)))
             db.session.add(m)
-            db.session.commit()      
+            db.session.commit
             kwargs['parameters']['Message_object_id'] = m.id
         else:
-            #todo, add fields to model for different call stages and times, like ringing, etc.
-            #TODO sent a message to a logger daemon rather than logging this directly, but perhaps increment a variable
-            #TODO no need to use get_or_create for anything but ringing
+            # todo, add fields to model for different call stages and times, like ringing, etc.
+            # TODO sent a message to a logger daemon rather than logging this directly, but perhaps increment a variable
+            # TODO no need to use get_or_create for anything but ringing
             if parameters.get('CallStatus') == 'ringing':
-                c = get_or_create(db.session, Call, call_uuid=parameters.get('CallUUID'))
+                c = get_or_create(
+                    db.session,
+                    Call,
+                    call_uuid=parameters.get('CallUUID'))
                 c.call_uuid = parameters.get('CallUUID')
-                c.start_time = datetime.now()                                                                     
-                c.from_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number=parameters.get('From'), number=parameters.get('From')).id
-                c.to_phonenumber_id = get_or_create(db.session, PhoneNumber, raw_number=parameters.get('To'), number=parameters.get('To')).id      
+                c.start_time = datetime.now()
+                c.from_phonenumber_id = get_or_create(
+                    db.session,
+                    PhoneNumber,
+                    raw_number=parameters.get('From'),
+                    number=parameters.get('From')).id
+                c.to_phonenumber_id = get_or_create(
+                    db.session,
+                    PhoneNumber,
+                    raw_number=parameters.get('To'),
+                    number=parameters.get('To')).id
                 logger.info("about to commit {}".format(str(c.__dict__)))
                 db.session.add(c)
                 db.session.commit()
                 kwargs['parameters']['Call_object_id'] = c.id
             if parameters.get('CallStatus') == 'completed':
-                c = get_or_create(db.session, Call, call_uuid=parameters.get('CallUUID'))
+                c = get_or_create(
+                    db.session,
+                    Call,
+                    call_uuid=parameters.get('CallUUID'))
                 kwargs['parameters']['Call_object_id'] = c.id
             if parameters.get('CallStatus') == 'completed':
-                c = get_or_create(db.session, Call, call_uuid=parameters.get('CallUUID'))
-                c.end_time = datetime.now()                                                                     
-                logger.info("about to commit {}".format(str(c.__dict__)))   
-                db.session.add(c)   
+                c = get_or_create(
+                    db.session,
+                    Call,
+                    call_uuid=parameters.get('CallUUID'))
+                c.end_time = datetime.now()
+                logger.info("about to commit {}".format(str(c.__dict__)))
+                db.session.add(c)
                 db.session.commit()
-        
-        logger.info("Returning Parameters = {}".format(str(kwargs['parameters'])))      
+
+        logger.info(
+            "Returning Parameters = {}".format(str(kwargs['parameters'])))
         return func(*args, **kwargs)
     return inner
-        
-        
-@telephony_server.route('/sms/in', methods=['GET', 'POST'])   
+
+
+@telephony_server.route('/sms/in', methods=['GET', 'POST'])
 @preload_caller
 def sms_in(parameters):
     """Receive an sms
-    { 'uuid': uuid, 
-      'edt': edt, 
-      'fr': fr, 
-      'to': to, 
-      'from_number': from_number, 
+    { 'uuid': uuid,
+      'edt': edt,
+      'fr': fr,
+      'to': to,
+      'from_number': from_number,
       'body': body,
-    } 
+    }
     """
-    logger.info("Parameters =" + str(parameters))    
-    logger.info("We received an SMS")      
+    logger.info("Parameters =" + str(parameters))
+    logger.info("We received an SMS")
     logger.info(parameters['from_number'])
-    logger.info(str(parameters['from_number']) == SHOW_HOST)                
-    #look at conferenceplay
-    #if parameters['from_number'] == SHOW_HOST or parameters['from_number'] == SHOW_HOST[2:]:     
+    logger.info(str(parameters['from_number']) == SHOW_HOST)
+    # look at conferenceplay
+    # if parameters['from_number'] == SHOW_HOST or parameters['from_number'] == SHOW_HOST[2:]:
     #    answered_url = "http://127.0.0.1:5000/answered/"
-    #    utils.call("sofia/gateway/switch2voip/",parameters['from_number'], answered_url) 
-    #else:  #obviously the below would only happen with approval of host
+    #    utils.call("sofia/gateway/switch2voip/",parameters['from_number'], answered_url)
+    # else:  #obviously the below would only happen with approval of host
     #    answered_url = "http://127.0.0.1:5000/answered/"
-    #    utils.call("sofia/gateway/switch2voip/",parameters['from_number'], answered_url)       
+    #    utils.call("sofia/gateway/switch2voip/",parameters['from_number'], answered_url)
     return "OK"
 
 
@@ -193,12 +223,14 @@ def waitmusic():
         logger.info(str(request.form.items()))
     else:
         logger.info(str(request.args.items()))
-    
-    r = plivohelper.Response()     
+
+    r = plivohelper.Response()
     r.addPlay("/home/csik/public_html/sounds/programs/3/current.mp3")
     logger.info("RESTXML Response => {}".format(r))
-    #return render_template('response_template.xml', response=r)    
+    # return render_template('response_template.xml', response=r)
     return "OK"
+
+# Not currently being used.
 
 
 @telephony_server.route('/hostwait/', methods=['GET', 'POST'])
@@ -209,51 +241,68 @@ def hostwait():
         logger.info(str(request.args.items()))
     r = plivohelper.Response()
     r.addPlay(TELEPHONY_SERVER_IP+"/~csik/sounds/english/Hello_Host.mp3")
-    r.addPlay(TELEPHONY_SERVER_IP+"/~csik/sounds/english/You_Have_X_Listeners.mp3")
+    r.addPlay(
+        TELEPHONY_SERVER_IP +
+        "/~csik/sounds/english/You_Have_X_Listeners.mp3")
     r.addPlay(TELEPHONY_SERVER_IP+"/~csik/sounds/english/Instructions.mp3")
     logger.info("RESTXML Response => {}".format(r))
     return render_template('response_template.xml', response=r)
 
 
-@telephony_server.route('/confer/<schedule_program_id>/<action>/', methods=['GET', 'POST'])
-@preload_caller 
+@telephony_server.route(
+    '/confer/<schedule_program_id>/<action>/',
+    methods=[
+        'GET',
+        'POST'])
+@preload_caller
 def confer(parameters, schedule_program_id, action):
     # Post params- 'CallUUID': unique id of call, 'Direction': direction of call,
     #               'To': Number which was called, 'From': calling number,
     #               If Direction is outbound then 2 additional params:
     #               'ALegUUID': Unique Id for first leg,
     #               'ALegRequestUUID': request id given at the time of api call
-    logger.info("confer is receiveing schedule_program_id: {}     action: {}".format(schedule_program_id, action))
+    logger.info(
+        "confer is receiveing schedule_program_id: {}     action: {}".format(
+            schedule_program_id,
+            action))
     if action == "ringing":
-        logger.info("Ringing for scheduled_program {}".format(schedule_program_id))
+        logger.info(
+            "Ringing for scheduled_program {}".format(schedule_program_id))
         return "OK"
     elif action == "heartbeat":
-        logger.info("Heartbeat for scheduled_program {}".format(schedule_program_id))
+        logger.info(
+            "Heartbeat for scheduled_program {}".format(schedule_program_id))
         return "OK"
     elif action == "hangup":
-        # THIS IS WHERE NUMBER IS TRANSFERRED FROM outgoing_busy TO outgoing_unused
-        logger.info("Hangup for scheduled_program {}".format(schedule_program_id))
+        # THIS IS WHERE NUMBER IS TRANSFERRED FROM outgoing_busy TO
+        # outgoing_unused
+        logger.info(
+            "Hangup for scheduled_program {}".format(schedule_program_id))
         return "OK"
     elif action == "answered":
-        logger.info("*Answered for scheduled_program {}".format(schedule_program_id))
-	#  This is where station daemons are contacted
-        r = plivohelper.Response() 
+        logger.info(
+            "*Answered for scheduled_program {}".format(schedule_program_id))
+        #  This is where station daemons are contacted
+        r = plivohelper.Response()
         from_number = parameters.get('From')
         try:
             logger.info("url_for format = {}".format(url_for('confer_events')))
         except Exception:
             logger.info("unable to get url_for")
-        p = r.addConference("plivo", 
-                            muted=False, 
-                            enterSound="beep:2", 
+        # TODO: get conference name from time & episode
+        # TODO: get station number and contact it if addConference worked
+
+        p = r.addConference("plivo",
+                            muted=False,
+                            enterSound="beep:2",
                             exitSound="beep:1",
-                            startConferenceOnEnter=True, 
+                            startConferenceOnEnter=True,
                             endConferenceOnExit=False,
-                            waitSound = ANSWERED+'waitmusic/',
-                            timeLimit = 0, 
+                            waitSound=ANSWERED+'waitmusic/',
+                            timeLimit=0,
                             hangupOnStar=True,
-                            callbackUrl=ANSWERED+'confer_events/', 
-                            callbackMethod="POST", 
+                            callbackUrl=ANSWERED+'confer_events/',
+                            callbackMethod="POST",
                             digitsMatch="#9,#7,#8,7,8,9",
                             )
         logger.info("RESTXML Response => {}".format(r))
@@ -262,56 +311,73 @@ def confer(parameters, schedule_program_id, action):
         logger.info("Could not recognize plivo url variable")
         return "OK"
 
+
 @telephony_server.route('/confer_events/', methods=['POST'])
-@preload_caller 
-def confer_events(parameters):       
+@preload_caller
+def confer_events(parameters):
     if parameters.get('ConferenceDigitsMatch'):
-        logger.info("Received a digit in conference:{}".format(parameters.get('ConferenceDigitsMatch')))
+        logger.info(
+            "Received a digit in conference:{}".format(
+                parameters.get('ConferenceDigitsMatch')))
     return "OK"
 
 
-#  This function should pretty much only be invoked for unsolicited calls 
+#  This function should pretty much only be invoked for unsolicited calls
 @telephony_server.route('/answered/', methods=['GET', 'POST'])
 @telephony_server.route('/ringing/', methods=['GET', 'POST'])
 @telephony_server.route('/heartbeat/', methods=['GET', 'POST'])
 @telephony_server.route('/hangup/', methods=['GET', 'POST'])
-@preload_caller 
+@preload_caller
 def root(parameters):
     logger.info("Request.path:{}".format(request.path))
     debug(request, "root")
-    
+
     if request.path == "/heartbeat/":
-        logger.info("Heartbeat for call from {0} to {1}".format(parameters.get('From'), parameters.get('To')))
+        logger.info(
+            "Heartbeat for call from {0} to {1}".format(
+                parameters.get('From'),
+                parameters.get('To')))
         return "OK"
     elif parameters.get('CallStatus') == "completed":
-        logger.info("Hangup of call from {0} to {1}".format(parameters.get('From'), parameters.get('To')))
+        logger.info(
+            "Hangup of call from {0} to {1}".format(
+                parameters.get('From'),
+                parameters.get('To')))
         return "OK"
     elif request.path == "/answered/":
         if parameters.get('CallStatus') == "ringing":
-            #Check to see if incoming call is TO a station's cloud number -- the public number of the station
-            phone_id = db.session.query(PhoneNumber).filter(PhoneNumber.raw_number==parameters.get('To')).one().id
-            station = db.session.query(Station).filter(Station.cloud_phone_id==phone_id).first()
+            # Check to see if incoming call is TO a station's cloud number --
+            # the public number of the station
+            phone_id = db.session.query(PhoneNumber).filter(
+                PhoneNumber.raw_number == parameters.get('To')).one().id
+            station = db.session.query(Station).filter(
+                Station.cloud_phone_id == phone_id).first()
             if station:
                 logger.info("Received call from cloud number:")
-                logger.info("Station: {}, Number:{}".format(station.name, station.cloud_phone.raw_number))
+                logger.info(
+                    "Station: {}, Number:{}".format(
+                        station.name,
+                        station.cloud_phone.raw_number))
                 logger.info("Choosing to not answer")
-                #should send to relevant station now....
+                # should send to relevant station now....
                 topic = "station.{}.call".format(station.id)
-                from_id = db.session.query(PhoneNumber).filter(PhoneNumber.raw_number==parameters.get('From')).one().id
-                messagedata =   {
-                                    "type":"call", 
-                                    "from":parameters.get('From'),
-                                    "from_id":from_id,
-                                    "time":parameters.get('start_time'),
+                from_id = db.session.query(PhoneNumber).filter(
+                    PhoneNumber.raw_number == parameters.get('From')).one().id
+                messagedata = {
+                    "type": "call",
+                    "from": parameters.get('From'),
+                    "from_id": from_id,
+                    "time": parameters.get('start_time'),
                 }
-                #send this to Josh's dispatcher
-                from telephony_server import telephony_server
-                telephony_server.config['ZMQ_SOCKET_TYPE']=zmq.PUB
-                telephony_server.config['ZMQ_BIND_ADDR']=ZMQ_FORWARDER_SUCKS_IN
+                # send this to Josh's dispatcher
+                from .telephony_server import telephony_server
+                telephony_server.config['ZMQ_SOCKET_TYPE'] = zmq.PUB
+                telephony_server.config[
+                    'ZMQ_BIND_ADDR'] = ZMQ_FORWARDER_SUCKS_IN
                 if not telephony_server.extensions.get('zmq'):
                     try:
-                        z=ZMQ(telephony_server)
-                        #send crap message to initiate socket
+                        z = ZMQ(telephony_server)
+                        # send crap message to initiate socket
                         z.send('test me')
                     except:
                         print "address already taken"
@@ -323,29 +389,40 @@ def root(parameters):
             else:
                 logger.info("Received call from non-cloud number")
                 return "OK"
-            logger.info("Ringing call from {0} to {1}".format(parameters.get('From'), parameters.get('To')))
+            logger.info(
+                "Ringing call from {0} to {1}".format(
+                    parameters.get('From'),
+                    parameters.get('To')))
 
-        #  Not ringing means it is answered    
-        else:    
+        #  Not ringing means it is answered
+        else:
         #  This is where station daemons are contacted
-            r = plivohelper.Response() 
+            r = plivohelper.Response()
             from_number = parameters.get('From')
-            p = r.addConference("plivo", muted=False, 
-                                enterSound="beep:2", exitSound="beep:1",
-                                startConferenceOnEnter=True, endConferenceOnExit=False,
-                                waitSound = ANSWERED+'waitmusic/',
-                                timeLimit = 0, hangupOnStar=True)
+            p = r.addConference(
+                "plivo",
+                muted=False,
+                enterSound="beep:2",
+                exitSound="beep:1",
+                startConferenceOnEnter=True,
+                endConferenceOnExit=False,
+                waitSound=ANSWERED +
+                'waitmusic/',
+                timeLimit=0,
+                hangupOnStar=True)
             logger.info("RESTXML Response => {}".format(r))
             return render_template('response_template.xml', response=r)
     else:
         logger.info("Could not recognize plivo url variable")
         return "OK"
 
+
 def main():
     plugins()
     return
 
-def plugins():   
+
+def plugins():
     # Load the plugins from the plugin directory.
     manager = PluginManager()
     manager.setPluginPlaces(["plugins"])
@@ -359,7 +436,7 @@ def plugins():
 
 if __name__ == '__main__':
     if not os.path.isfile("templates/response_template.xml"):
-        logger.info("Error : Can't find the XML template : templates/response_template.xml")
+        logger.info(
+            "Error : Can't find the XML template : templates/response_template.xml")
     else:
         telephony_server.run(host='127.0.0.1', port=5000)
-
