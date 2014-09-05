@@ -38,7 +38,7 @@ def get_number_of_waiting_callers():
 def play_message():
     pass
 
-
+#these should be station functions, no?
 def call_transmitter():
     pass
 

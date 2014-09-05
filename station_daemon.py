@@ -163,7 +163,8 @@ class StationDaemon(Station):
         if (change_dict['operation'] == 'insert' or change_dict['operation'] == 'update') and isodate.parse_datetime(change_dict['start_time']) <= datetime.now():
             logger.info("We have successful conditions to launch a program!")
             import news_report
-            self.program = news_report.News(3, self)
+            conf_name = "{}_{}".format(change_dict.get('obj_id'),change_dict.get('program_id'))
+            self.program = news_report.News(conf_name, self) #  Chang to change_dict.get('obj_id')+'.'+change_dict.get('program_id')
             # this should really be a callback! see below for
             # process_connected_transmitter()
             time.sleep(13)

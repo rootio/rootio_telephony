@@ -58,11 +58,14 @@ class News(StateMachine):
         self.caller_list = "caller_list-{0}".format(episode_id)
         # self.sound_url = "{}{}{}{}".format(TELEPHONY_SERVER_IP,'/~csik/sounds/programs/',episode_id,'/current.mp3')
         # "news_report_conference-{}".format(episode_id)
-        self.conference = "plivo"
+        self.conference = episode_id
+        #self.conference = "plivo"
+
         logger.info("station : {}    type : {}".format(station, type(station)))
         # the database representation of the station
         self.station = station.station
-        self.station_daemon = station  # the actual python object in memory
+        # the actual python object in memory
+        self.station_daemon = station
         self.episode_id = episode_id
         self.is_master = False
         self.fnumber = None
@@ -183,7 +186,7 @@ class News(StateMachine):
                         Exception,
                         e))
             # TODO remove hardcoded ref to sound file
-            call_params = {'ConferenceName': 'plivo',
+            call_params = {'ConferenceName': self.conference,
                            'MemberID': 'all',
                            'FilePath': SOUND_FILE_ROOT+'programs/5/current.mp3'
                            }

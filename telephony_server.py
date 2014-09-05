@@ -292,7 +292,7 @@ def confer(parameters, schedule_program_id, action):
         # TODO: get conference name from time & episode
         # TODO: get station number and contact it if addConference worked
 
-        p = r.addConference("plivo",
+        p = r.addConference(schedule_program_id,
                             muted=False,
                             enterSound="beep:2",
                             exitSound="beep:1",
