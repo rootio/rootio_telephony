@@ -1,5 +1,5 @@
-from fluidity import StateMachine, state, transition
 import plivohelper
+from fluidity import StateMachine, state, transition
 
 """
 Sketch of news show.
@@ -17,6 +17,7 @@ Options:
 from config import *
 import redis
 
+from program_utils import sleep_advance_on_wake
 from utils import call, init_logging
 from sound_utils import soundLength
 
@@ -26,6 +27,8 @@ import os
 import sys
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 import time
+from datetime import datetime, timedelta
+from apscheduler.scheduler import Scheduler
 
 # get access to telephony & web database
 # TODO News Report should have no understanding of flask or database
@@ -64,6 +67,8 @@ class News(StateMachine):
         self.is_master = False
         self.fnumber = None
         self.on_success_next = self.go_intro
+        self.sched = Scheduler()
+        self.sched.start()
         super(News, self).__init__()
 
     def setup(self):
@@ -192,7 +197,9 @@ class News(StateMachine):
                         "Playing sound file, sleeping for {} seconds.".format(
                             mp3len +
                             constant))
-                    time.sleep(mp3len+constant)
+                    # print "job scheduled was: {}".format(self.advance_on_wake(mp3len+constant,self.go_outro))
+                    print "job scheduled was: {}".format(sleep_advance_on_wake(self.sched, mp3len+constant, self.go_outro))
+                    # time.sleep(mp3len+constant)
             except Exception as e:
                 logger.info(
                     "Exception in news_report REPORT conference play: {},{}".format(
@@ -200,7 +207,7 @@ class News(StateMachine):
                         e))
             # check on calls?
 
-            self.go_outro()
+            #self.go_outro()
 
     def outro(self):
         logger.info("In OUTRO to news report {}".format(self.conference))

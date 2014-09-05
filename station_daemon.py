@@ -46,7 +46,6 @@ class StationDaemon(Station):
 
     def __init__(self, station_id):
         logger.info("Hello World")
-        self.gateway = 'sofia/gateway/utl'
         self.caller_queue = []
         self.active_workers = []
         self.listener_reponses = {
@@ -57,7 +56,6 @@ class StationDaemon(Station):
             "telephony_callback": self.process_telephony_callback,
             "digits":             self.process_digits,
             }
-
 
         try:
             self.station = db.session.query(Station).filter(
